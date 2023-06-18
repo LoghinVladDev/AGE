@@ -1,0 +1,17 @@
+//
+// Created by Vlad-Andrei Loghin on 18.06.23.
+//
+
+#ifndef QWID_MOCK
+#define QWID_MOCK
+
+struct QWidget {
+  auto resize(int width, int height) noexcept -> void {
+    (void) width;
+    (void) height;
+  }
+
+  auto show() noexcept -> void {}
+};
+
+#endif // QWID_MOCK

@@ -44,7 +44,19 @@ set_target_properties(
     PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
-add_test(
-    NAME unit_tests
-    COMMAND unit_tests
-)
+add_test(NAME unit_tests COMMAND unit_tests)
+
+if(DEFINED QT_VERSION)
+  add_executable(
+      visualizer_mock
+      qtMock/visualizer_mock.cpp
+  )
+
+  target_include_directories(
+      visualizer_mock
+      PRIVATE
+      qtMock
+  )
+
+  add_test(NAME visualizer_mock COMMAND visualizer_mock)
+endif()
