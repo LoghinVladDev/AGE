@@ -97,7 +97,7 @@ set_target_properties(
 ----
 
 .`.github/workflows/commit-validate.yml`
-[source, yaml]
+[source,diff]
 ----
 jobs:
   analysis:
@@ -106,8 +106,8 @@ jobs:
     env:
       # ...
       TARGETS: |
-        unit_tests
-        visualizer
-        # ...
-        # add_your_target_here
+        unit_tests \
+-       visualizer
++       visualizer \
++       visualizer_mock
 ----
