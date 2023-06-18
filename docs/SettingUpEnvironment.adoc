@@ -1,64 +1,71 @@
-= Tooling
+= Setting up your environemnt
 
-Details on the tools used in the project
+This section contains the initial setup of the environment
 
-== Clang Format
-Code format is verified at commit and required for PRs.
-This is done by `clang-format`.
-The config file (`.clang-format`) is present at the root of the project.
+== Dependencies
 
-`clang-format` also provides `git-clang-format`, which can be used to validate the format of the current working changes.
+=== For Base Targets
 
-Executing `git-clang-format` before every commit can be tiresome.
-Because of this, a git pre-commit hook can be used to invoke `git-clang-format`
+- install https://git-scm.com/book/en/v2/Getting-Started-Installing-Git[git]
 
-Sample pre-commit hook below. Ensure that:
+- install https://cmake.org/install/[cmake], minimum version 3.15
 
-- `BIN_DIR` contains the path to `clang-format` binary and `git-clang-format` script
-- `git-clang-format` has the execution flag set
+- install clang, latest stable version.
 
-.`.git/hooks/pre-commit`
-[source]
+Submodules should also be fetched by either of the following:
+
+- `git clone --recurse-submodules <repo>` at clone
+
+- `git checkout --recurse-submodules <branch>` at branch switch
+
+- `git submodule update --init --recursive` once on the desired branch
+
+=== For Visualizer Targets
+
+In addition to the Base Targets requirements, to enable visualizer targets, the following are required:
+
+- https://www.qt.io/download-qt-installer-oss[Qt Open Source] binaries, either Qt5 or Qt6.
+
+
+== Building the Binaries
+
+=== Manually
+
+==== Base Targets
+Clone the project
+
+[source,bash]
 ----
-#!/bin/bash
-#
-# Hook script to verify what is about to be committed is appropriately formatted.
-#
-# Instructions:
-#  * Copy this file to $(git rev-parse --git-dir)/hooks/pre-commit.
-#  * Update CLANG_FORMAT below if you wish to use a custom path.
-#
-# If you want something more advanced, like automatically formatting files,
-# you can look at existing scripts at your own risk, of course, such as
-# https://github.com/barisione/clang-format-hooks.
-
-set -euo pipefail
-
-# Use clang-format.
-BIN_DIR="path/to/clang-format/binary"
-CLANG_FORMAT="${BIN_DIR}/clang-format"
-GIT_CLANG_FORMAT="${BIN_DIR}/git-clang-format"
-
-if git rev-parse --verify HEAD >/dev/null 2>&1
-then
-  AGAINST=HEAD
-else
-  # Initial commit: diff against an empty tree object
-  AGAINST=$(git hash-object -t tree /dev/null)
-fi
-
-# Redirect output to stderr.
-exec 1>&2
-
-# Print formatting diff and exit with a non-zero value
-# if any file needs to be reformatted.
-if ! "${GIT_CLANG_FORMAT}" --extension c,cpp,h,hpp \
-    --binary "${CLANG_FORMAT}" \
-    --commit "${AGAINST}" --staged --diff
-then
-  echo "Some files need to be reformatted before being committed."
-  exit 1
-fi
-
+git clone --recurse-submodules https://github.com/LoghinVladDev/AGE.git
 ----
 
+Build the targets using cmake
+
+Setup cmake for base targets
+
+[source,bash]
+----
+# If using another compiler, or clang is not in the env Path, provide your own values
+
+cmake -S . -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+----
+
+Setup cmake for base and visualizer targets
+
+[source,bash]
+----
+# If using another compiler, or clang is not in the env Path, provide your own values
+
+# Path to Qt binaries can be provided by either QT5_PATH or QT6_PATH.
+# Path must be to binaries, not to Qt installation
+# The binaries are usually in the Qt install folder -> version -> architecture.
+# Example, on x86_64 linux for Qt 6.3.0: /path/to/qt/6.3.0/gcc_64
+
+cmake -S . -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DQT6_PATH="/path/to/your/qt/binaries"
+----
+
+The base available build targets are:
+
+- `unit_tests` - binary executing all standard unit tests
+- `visualizer` - binary of the graph visualization and editing application
+- `visualizer_mock` - mock binary of the graph visualization (separate unit test)

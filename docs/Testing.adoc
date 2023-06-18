@@ -1,0 +1,113 @@
+= Testing
+
+All code added to the project in src must be tested.
+To enforce this, the SonarCloud analysis will also track code coverage.
+If the code added to a PR is not covered properly by tests, the merge will be blocked.
+
+Depending on the functionality of the code, different approaches are to be considered.
+
+Project tests are found inside the `test` folder.
+
+== Unit Tests
+
+Found inside `test/unittests`, these involve basic function/class tests for the code.
+
+These tests must be configured using the dedicated `CMakeLists.txt` found inside the `unittests` folder.
+
+A unit test source must be created for each source in `src`.
+
+=== Google Test
+
+Most of the unit tests are executing using GoogleTest - https://github.com/google/googletest[gtest].
+These will be included in the `unit_tests` target.
+
+To add a new file to the target, add it to the `UNIT_TEST_SOURCES` variable inside `src/unittests/CMakeLists.txt`.
+
+A basic test sample can be found at `src/unittests/DummyTest.cpp`. Further reference to gtest utilities can be found https://google.github.io/googletest/[here].
+
+=== Dependency Mocking
+
+The unit tests should not be linked against external dependencies, and provide these as mocked instead.
+
+As an example, Qt Mock classes can be found inside `src/unittests/qtMock`.
+
+The unit tests must never include external dependencies headers, and include mock headers instead. To do this, use the `target_include_directories` cmake command.
+
+.`src/unittests/CMakeLists.txt`
+[source,cmake]
+----
+# ...
+# Example adding qtMock headers to the unit_tests target and sources.
+target_include_directories(unit_tests PRIVATE qtMock)
+# ...
+----
+
+=== Target Mocking
+
+Since target sources (ex. `src/target/visualizer.cpp`) have a `main` directive, these cannot be included in the `unit_tests` target for obvious reasons.
+
+To work around this limitation, mock targets can be created.
+
+Example of setting up a mock test for the `visualizer` target:
+
+.`tests/unittests/qtMock/visualizer_mock.cpp`
+[source, cpp]
+----
+// Completely evil source include code.
+
+#include "../../../src/target/visualizer.cpp"
+----
+
+This will be added as a separate target.
+
+.`tests/unittests/CMakeLists.txt`
+[source, cmake]
+----
+# ...
+# Create the mock executable
+add_executable(
+    visualizer_mock
+    qtMock/visualizer_mock.cpp
+)
+
+# Include the mocked classes
+target_include_directories(
+    visualizer_mock
+    PRIVATE
+    qtMock
+)
+
+# Mark it as a test for CMake
+add_test(NAME visualizer_mock COMMAND visualizer_mock)
+# ...
+----
+
+To ensure coverage is included for these targets in the PR analysis, two extra steps must be taken.
+
+.`tests/unittests/CMakeLists.txt`
+[source, cmake]
+----
+# ...
+# Ensure that the mock binary is located in the 'build' folder, not in the 'build/test/unittests' subdirectory
+set_target_properties(
+    visualizer_mock
+    PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+# ...
+----
+
+.`.github/workflows/commit-validate.yml`
+[source,diff]
+----
+jobs:
+  analysis:
+    name: Build & Validate
+    # ...
+    env:
+      # ...
+      TARGETS: |
+        unit_tests \
+-       visualizer
++       visualizer \
++       visualizer_mock
+----
