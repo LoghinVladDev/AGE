@@ -16,7 +16,7 @@ elseif(DEFINED QT5_PATH)
   list(APPEND CMAKE_PREFIX_PATH ${QT5_PATH})
   set(QT_VERSION 5)
 else()
-  message("-- QT_PATH not defined, Qt Dependant Targets will not be created")
+  message("-- QTx_PATH not defined, Qt Dependant Targets will not be created")
 endif()
 
 if(DEFINED QT_VERSION)
