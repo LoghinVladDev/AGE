@@ -1,0 +1,68 @@
+name: SonarCloud Validation
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  format_check:
+    name: Build & Validate
+    runs-on: ubuntu-latest
+    env:
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1 # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Install sonar-scanner and build-wrapper
+        uses: SonarSource/sonarcloud-github-c-cpp@v1
+      - name: Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.llvm
+            ./llvm
+          key: llvm-16
+      - name: Install Clang and LLVM (including llvm-cov)
+        uses: KyleMayes/install-llvm-action@v1.8.1
+        with:
+          version: "16"
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3.2.1
+        with:
+          version: "6.5.1"
+          cache: "true"
+      - name: Run build-wrapper
+        run: |
+          mkdir build
+          cmake -S . -B build \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_FLAGS=" ${CMAKE_CXX_FLAGS} -fprofile-instr-generate -fcoverage-mapping -O0 -g" \
+            -DQT6_PATH="$RUNNER_WORKSPACE/Qt/6.5.1/gcc_64"
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ \
+            --target unit_tests visualizer visualizer_mock
+      - name: Run tests to generate coverage information
+        run: |
+          ./build/unit_tests
+          mv default.profraw unit_tests.profraw
+          ./build/visualizer_mock
+          mv default.profraw visualizer_mock.profraw
+      - name: Merge counters from different runs and convert the result into an llvm-cov-compatible form
+        run: |
+          llvm-profdata merge -o merged.profdata *.profraw
+      - name: Collect the coverage
+        run: |
+          llvm-cov show --instr-profile merged.profdata build/unit_tests --object build/visualizer_mock > unit_tests_cov.txt
+      - name: Run sonar-scanner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner \
+            --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" \
+            --define sonar.cfamily.llvm-cov.reportPath=unit_tests_cov.txt

@@ -1,0 +1,19 @@
+//
+// Created by Vlad-Andrei Loghin on 18.06.23.
+//
+
+#ifndef QAPP_MOCK
+#define QAPP_MOCK
+
+struct QApplication {
+  explicit QApplication(int& argc, char** argv = nullptr) noexcept {
+    (void) argc;
+    (void) argv;
+  }
+
+  static auto exec() noexcept -> int {
+    return 0;
+  }
+};
+
+#endif // QAPP_MOCK
