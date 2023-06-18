@@ -58,5 +58,10 @@ if(DEFINED QT_VERSION)
       qtMock
   )
 
+  set_target_properties(
+      visualizer_mock
+      PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+
   add_test(NAME visualizer_mock COMMAND visualizer_mock)
 endif()
