@@ -27,7 +27,7 @@ jobs:
             ./llvm
           key: llvm-16
       - name: Install Clang and LLVM (including llvm-cov)
-        uses: KyleMayes/install-llvm-action@v1.6.1
+        uses: KyleMayes/install-llvm-action@v1.8.1
         with:
           version: "16"
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
