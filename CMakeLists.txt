@@ -9,15 +9,39 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
-set(
-    VISUALIZER_SOURCES
-    src/target/visualizer.cpp
-)
+if(DEFINED QT6_PATH)
+  list(APPEND CMAKE_PREFIX_PATH ${QT6_PATH})
+  set(QT_VERSION 6)
+elseif(DEFINED QT5_PATH)
+  list(APPEND CMAKE_PREFIX_PATH ${QT5_PATH})
+  set(QT_VERSION 5)
+else()
+  message("-- QT_PATH not defined, Qt Dependant Targets will not be created")
+endif()
 
-add_executable(
-    visualizer
-    ${VISUALIZER_SOURCES}
-)
+if(DEFINED QT_VERSION)
+  find_package(Qt${QT_VERSION} REQUIRED COMPONENTS Core Gui Widgets)
+  set(CMAKE_AUTOMOC ON)
+  set(CMAKE_AUTORCC ON)
+  set(CMAKE_AUTOUIC ON)
+
+  set(
+      VISUALIZER_SOURCES
+      src/target/visualizer.cpp
+  )
+
+  add_executable(
+      visualizer
+      ${VISUALIZER_SOURCES}
+  )
+
+  target_link_libraries(
+      visualizer
+      Qt${QT_VERSION}::Core
+      Qt${QT_VERSION}::Gui
+      Qt${QT_VERSION}::Widgets
+  )
+endif()
 
 include(FetchContent)
 
