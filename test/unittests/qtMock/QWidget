@@ -2,16 +2,16 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef QWID_MOCK
-#define QWID_MOCK
+#ifndef AGE_MOCK_QWIDGET
+#define AGE_MOCK_QWIDGET
+
+#include <QCommon>
 
 struct QWidget {
-  auto resize(int width, int height) noexcept -> void {
-    (void) width;
-    (void) height;
-  }
-
+  auto resize(int, int) noexcept -> void {}
   auto show() noexcept -> void {}
+  explicit QWidget(QWidget* = nullptr) {}
+  virtual ~QWidget() noexcept = default;
 };
 
-#endif // QWID_MOCK
+#endif // AGE_MOCK_QWIDGET

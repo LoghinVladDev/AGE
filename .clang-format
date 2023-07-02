@@ -9,6 +9,8 @@ PointerAlignment: Left
 ReferenceAlignment: Left
 SpaceAroundPointerQualifiers: Default
 
+AlignTrailingComments: Always
+
 LineEnding: LF
 
 BasedOnStyle: LLVM
@@ -18,8 +20,8 @@ AlignConsecutiveAssignments: None
 AlignOperands: DontAlign
 AllowAllArgumentsOnNextLine: false
 AllowAllConstructorInitializersOnNextLine: true
-AllowAllParametersOfDeclarationOnNextLine: false
-AllowShortBlocksOnASingleLine: Always
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: Always
@@ -44,7 +46,7 @@ BraceWrapping:
 BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: AfterColon
-BreakInheritanceList: BeforeColon
+BreakInheritanceList: AfterColon
 ColumnLimit: 120
 CompactNamespaces: false
 ContinuationIndentWidth: 4
@@ -60,6 +62,7 @@ ReflowComments: false
 SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: true
+
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeCpp11BracedList: true
 SpaceBeforeCtorInitializerColon: true
@@ -67,7 +70,8 @@ SpaceBeforeInheritanceColon: true
 SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceInEmptyParentheses: false
-SpacesBeforeTrailingComments: 0
+SpacesBeforeTrailingComments: 1
+
 SpacesInAngles: false
 SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: false

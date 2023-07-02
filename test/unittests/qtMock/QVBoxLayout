@@ -1,0 +1,15 @@
+//
+// Created by Vlad-Andrei Loghin on 18.06.23.
+//
+
+#ifndef AGE_MOCK_QVBOXLAYOUT
+#define AGE_MOCK_QVBOXLAYOUT
+
+#include <QLayout>
+
+struct QVBoxLayout : public QLayout {
+  using QLayout::QLayout;
+  ~QVBoxLayout() noexcept override = default;
+};
+
+#endif // AGE_MOCK_QVBOXLAYOUT
