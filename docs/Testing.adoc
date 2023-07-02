@@ -111,3 +111,19 @@ jobs:
 +       visualizer \
 +       visualizer_mock
 ----
+
+== Memory Leaks
+
+To ensure that any binary / library file does not produce memory leaks, any test should be tested with a method of address sanitization.
+
+- Linux users can use https://valgrind.org/[valgrind-memcheck]
+- The Clang compiler also provides address sanitization, enabled by passing `-fsanitize=address` to the compilation
+```bash
+cmake -S . -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS="-fsanitize=address"
+```
+
+Beyond address sanitization, clang also provides other sanitize options
+
+- Undefined Behavior sanitization "-fsanitize=undefined"
+- Thread sanitization "-fsanitize=thread"
+- Memory sanitization "-fsanitize=memory"

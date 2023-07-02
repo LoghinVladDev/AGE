@@ -1,0 +1,16 @@
+//
+// Created by Vlad-Andrei Loghin on 18.06.23.
+//
+
+#ifndef AGE_MOCK_QLAYOUT
+#define AGE_MOCK_QLAYOUT
+
+#include <QCommon>
+
+struct QWidget;
+struct QLayout {
+  explicit QLayout(QWidget*) noexcept {}
+  virtual ~QLayout() noexcept = default;
+};
+
+#endif // AGE_MOCK_QLAYOUT

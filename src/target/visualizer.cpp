@@ -3,12 +3,18 @@
 //
 
 #include <QApplication>
-#include <QWidget>
+#include <settings/SettingsRegistry.hpp>
+#include <window/VisualizerWindow.hpp>
+
+namespace {
+using age::visualizer::VisualizerWindow;
+using age::visualizer::settings::Registry;
+} // namespace
 
 int main(int argc, char** argv) {
+  Registry::triggerLoad();
   ::QApplication app(argc, argv);
-  ::QWidget w;
-  w.resize(100, 100);
+  VisualizerWindow w;
   w.show();
   return ::QApplication::exec();
 }

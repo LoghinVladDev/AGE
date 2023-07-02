@@ -2,18 +2,17 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef QAPP_MOCK
-#define QAPP_MOCK
+#ifndef AGE_MOCK_QAPPLICATION
+#define AGE_MOCK_QAPPLICATION
+
+#include <QCommon>
 
 struct QApplication {
-  explicit QApplication(int& argc, char** argv = nullptr) noexcept {
-    (void) argc;
-    (void) argv;
-  }
+  explicit QApplication(int&, char** = nullptr) noexcept {}
 
   static auto exec() noexcept -> int {
     return 0;
   }
 };
 
-#endif // QAPP_MOCK
+#endif // AGE_MOCK_QAPPLICATION

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(AEG)
+project(AGE)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,6 +21,29 @@ else()
   message("-- QTx_PATH not defined, Qt Dependant Targets will not be created")
 endif()
 
+set(
+    AGE_CORE_INCLUDE_DIRECTORIES
+    ${CMAKE_SOURCE_DIR}/dependencies/cds/include
+    ${CMAKE_SOURCE_DIR}/src/core
+)
+
+set(
+    CORE_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/core/lang/string/StringRef.cpp
+)
+
+add_library(
+    lib.core
+    STATIC
+    ${CORE_SOURCES}
+)
+
+target_include_directories(
+    lib.core
+    PUBLIC
+    ${AGE_CORE_INCLUDE_DIRECTORIES}
+)
+
 if(DEFINED QT_VERSION)
   find_package(Qt${QT_VERSION} REQUIRED COMPONENTS Core Gui Widgets)
   set(CMAKE_AUTOMOC ON)
@@ -28,20 +51,54 @@ if(DEFINED QT_VERSION)
   set(CMAKE_AUTOUIC ON)
 
   set(
+      VISUALIZER_CORE_SOURCES
+      ${CMAKE_SOURCE_DIR}/src/visualizer/settings/SettingsRegistry.cpp
+  )
+
+  set(
       VISUALIZER_SOURCES
-      src/target/visualizer.cpp
+      ${CMAKE_SOURCE_DIR}/src/visualizer/window/VisualizerWindow.cpp
+  )
+
+  add_library(
+      lib.visualizer_core
+      STATIC
+      ${VISUALIZER_CORE_SOURCES}
+  )
+
+  target_link_libraries(
+      lib.visualizer_core
+      PUBLIC
+      lib.core
   )
 
   add_executable(
       visualizer
       ${VISUALIZER_SOURCES}
+      src/target/visualizer.cpp
   )
 
   target_link_libraries(
       visualizer
+      lib.core
+      lib.visualizer_core
       Qt${QT_VERSION}::Core
       Qt${QT_VERSION}::Gui
       Qt${QT_VERSION}::Widgets
+  )
+
+  target_include_directories(
+      visualizer
+      PUBLIC
+      src/visualizer
+      ${AGE_CORE_INCLUDE_DIRECTORIES}
+  )
+
+  target_include_directories(
+      lib.visualizer_core
+      PUBLIC
+      src/visualizer
+      ${AGE_CORE_INCLUDE_DIRECTORIES}
   )
 endif()
 
