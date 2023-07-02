@@ -66,6 +66,12 @@ if(DEFINED QT_VERSION)
       ${VISUALIZER_CORE_SOURCES}
   )
 
+  target_link_libraries(
+      lib.visualizer_core
+      PUBLIC
+      lib.core
+  )
+
   add_executable(
       visualizer
       ${VISUALIZER_SOURCES}
