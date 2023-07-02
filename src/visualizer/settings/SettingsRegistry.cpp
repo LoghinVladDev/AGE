@@ -4,6 +4,9 @@
 
 #include "SettingsRegistry.hpp"
 #include <CDS/threading/Thread>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <tuple>
 
 using namespace cds;
