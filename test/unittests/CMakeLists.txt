@@ -48,12 +48,14 @@ if(DEFINED QT_VERSION)
 
   add_executable(
       visualizer_mock
+      ${VISUALIZER_SOURCES}
       qtMock/visualizer_mock.cpp
   )
 
   target_include_directories(
       visualizer_mock
       PUBLIC
+      ${CMAKE_SOURCE_DIR}/src/visualizer
       ${QT_MOCK_INCLUDE}
       ${COMMON_INCLUDE_DIRECTORIES}
   )
@@ -61,6 +63,12 @@ if(DEFINED QT_VERSION)
   set_target_properties(
       visualizer_mock
       PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+
+  target_link_libraries(
+      visualizer_mock
+      lib.core
+      lib.visualizer_core
   )
 
   add_test(NAME visualizer_mock COMMAND visualizer_mock)
