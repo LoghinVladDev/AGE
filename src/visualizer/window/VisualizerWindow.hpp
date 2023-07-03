@@ -16,6 +16,7 @@ class VisualizerWindow : public QWidget {
 public:
   explicit VisualizerWindow(QWidget* pParent = nullptr) noexcept;
   ~VisualizerWindow() noexcept override = default;
+  void mousePressEvent(QMouseEvent *event) override;
 
 private:
   cds::UniquePointer<QLayout> _primaryLayout {nullptr};
