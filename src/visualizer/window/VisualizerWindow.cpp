@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 
 namespace age::visualizer {
+
 VisualizerWindow::VisualizerWindow(QWidget* pParent) noexcept :
     QWidget(pParent), _primaryLayout(cds::makeUnique<QVBoxLayout>(this)) {}
 } // namespace age::visualizer
