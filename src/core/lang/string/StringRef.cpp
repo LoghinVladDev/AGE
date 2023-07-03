@@ -61,6 +61,7 @@ auto StringRef::operator=(char const* string) noexcept -> StringRef& {
 
 StringRef::operator bool() const noexcept { return !empty(); }
 StringRef::operator StringView() const noexcept { return {data(), size()}; }
+StringRef::operator String() const noexcept { return {data(), size()}; }
 
 auto StringRef::dropFront(Size amount) const noexcept -> StringRef {
   if (amount >= size()) {

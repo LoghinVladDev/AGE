@@ -3,18 +3,20 @@
 //
 
 #include "SettingsRegistry.hpp"
+#include <CDS/filesystem/Path>
 #include <CDS/threading/Thread>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <tuple>
 
+namespace {
 using namespace cds;
+using namespace cds::filesystem;
 using namespace cds::json;
 using namespace age;
 using namespace age::visualizer::settings;
 
-namespace {
 using std::atomic_flag;
 using std::condition_variable;
 using std::lock_guard;
@@ -86,12 +88,19 @@ public:
 
   template <typename F> explicit(false) Async(F&& function) noexcept(false) : _fn(std::forward<F>(function)) {}
 
+  auto reset() {
+    _ended.clear(std::memory_order_release);
+    std::get<2>(_sync) = false;
+    std::get<3>(_sync) = false;
+  }
+
   template <typename... A> auto trigger(A&&... args) noexcept(false) -> void {
-    _executer = new Runnable([this, &args...] {
+    reset();
+    _executer = new Runnable([this, args...]() mutable {
       auto& [mutex, condition, startStatus, endStatus] = _sync;
       unique_lock lock(mutex);
       condition.wait(lock, [&startStatus] { return startStatus; });
-      _result.awaitResult(_fn, std::forward<A>(args)...);
+      _result.awaitResult(_fn, args...);
       endStatus = true;
       lock.unlock();
       condition.notify_one();
@@ -141,18 +150,35 @@ private:
   atomic_flag _ended;
 };
 
-auto const loader = cds::makeUnique<Async<void, JsonObject&, JsonObject&>>([](JsonObject& main, JsonObject& copy) {
-  main.put("testStr", "test");
-  main.put("testInt", 0);
-  main.put("testFloat", 0.0f);
-  main.put("testBool", false);
-  main.put("testArray", JsonArray());
-  main.put("testJson", JsonObject().put("testStr", "testSub"));
-  copy = main;
+auto const loader = cds::makeUnique<Async<void, JsonObject*, JsonObject*>>([](JsonObject* main, JsonObject* copy) {
+  main->put("testStr", "test");
+  main->put("testInt", 0);
+  main->put("testFloat", 0.0f);
+  main->put("testBool", false);
+  main->put("testArray", JsonArray());
+  main->put("testJson", JsonObject().put("testStr", "testSub"));
+  *copy = *main;
 });
 
-auto const saver = cds::makeUnique<Async<void, StringView, JsonObject const&>>(
-    [](StringView, JsonObject const&) { std::cout << "Saved\n"; });
+auto const saver = cds::makeUnique<Async<void, Path, JsonObject const*>>(
+    [](Path path, JsonObject const* json) { std::cout << "Trigger save of json to '" << path << "'\n"; });
+
+auto convertToPath(StringRef key) noexcept -> String {
+  String path = "./";
+  while (key) {
+    auto dotPos = key.find('.');
+    if (dotPos == StringRef::npos) {
+      dotPos = key.size();
+    }
+
+    path += StringView(key.takeFront(dotPos));
+    key = key.dropFront(dotPos + 1);
+    if (key) {
+      path += "/";
+    }
+  }
+  return path + ".json";
+}
 } // namespace
 
 auto Registry::sub(StringRef& key) noexcept -> StringRef { return ::sub(key); }
@@ -171,7 +197,7 @@ auto Registry::triggerLoad() noexcept(false) -> void {
     _stored = cds::makeUnique<Registry>(Token {});
   }
 
-  loader->trigger(_active->_contents, _stored->_contents);
+  loader->trigger(&_active->_contents, &_stored->_contents);
 }
 
 auto Registry::reset(StringRef key) noexcept(false) -> void {
@@ -193,27 +219,37 @@ auto Registry::reset(StringRef key) noexcept(false) -> void {
   lJson->get(subKey) = rJson->get(subKey);
 }
 
+auto Registry::replaceIfMissing(JsonObject* pJson, StringRef key, bool overwriteType) noexcept -> void {
+  if (auto jsonIt = pJson->find(key); jsonIt == pJson->end()) {
+    pJson->put(key, JsonObject());
+  } else if (overwriteType || !jsonIt->value().isJson()) {
+    jsonIt->value() = JsonObject();
+  }
+}
+
 auto Registry::save(StringRef key) noexcept(false) -> void {
   auto lJson = &_stored->_contents;
   auto rJson = &_active->_contents;
-  StringView savePath = defaultPath;
+  String savePath = key ? convertToPath(key) : defaultPath;
 
   if (key) {
     auto subKey = sub(key);
     while (key) {
+      replaceIfMissing(lJson, subKey, true);
+
       lJson = &lJson->getJson(subKey);
       rJson = &rJson->getJson(subKey);
-      savePath = lJson->getString(StringView(pathInternalPrefix) + (StringView) subKey);
       subKey = sub(key);
     }
     saver->await();
+    replaceIfMissing(lJson, subKey);
     lJson->get(subKey) = rJson->get(subKey);
   } else {
     saver->await();
     *lJson = *rJson;
   }
 
-  saver->trigger(savePath, *lJson);
+  saver->trigger(savePath, lJson);
 }
 
 auto Registry::getInt(StringRef key) const noexcept(false) -> int { return get(_contents, key).getInt(); }

@@ -44,6 +44,7 @@ public:
 
   [[nodiscard]] explicit(false) operator bool() const noexcept;
   [[nodiscard]] explicit(false) operator cds::StringView() const noexcept;
+  [[nodiscard]] explicit(false) operator cds::String() const noexcept;
 
   auto clear() noexcept -> void;
   [[nodiscard]] auto takeFront(cds::Size amount) const noexcept -> StringRef;

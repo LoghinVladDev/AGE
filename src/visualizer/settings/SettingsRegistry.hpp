@@ -38,11 +38,14 @@ public:
   [[nodiscard]] auto getJson(StringRef key) noexcept(false) -> cds::json::JsonObject&;
 
   template <typename Type> auto put(StringRef key, Type&& value) noexcept(false) -> Registry&;
+  template <typename Type> auto replace(StringRef key, Type&& value) noexcept(false) -> Registry&;
 
   explicit(false) Registry(Token) noexcept {}
 
 private:
   static auto sub(StringRef& key) noexcept -> StringRef;
+  static auto replaceIfMissing(cds::json::JsonObject* pJson, StringRef key, bool overwriteType = false) noexcept
+      -> void;
 
   cds::json::JsonObject _contents;
 
@@ -56,10 +59,29 @@ template <typename Type> auto Registry::put(StringRef key, Type&& value) noexcep
   auto current = &_contents;
   auto subKey = sub(key);
   while (key) {
+    replaceIfMissing(current, subKey);
     current = &current->getJson(subKey);
     subKey = sub(key);
   }
   current->put(subKey, std::forward<Type>(value));
+  return *this;
+}
+
+template <typename Type> auto Registry::replace(StringRef key, Type&& value) noexcept(false) -> Registry& {
+  auto current = &_contents;
+  auto subKey = sub(key);
+  while (key) {
+    replaceIfMissing(current, subKey);
+    current = &current->getJson(subKey);
+    subKey = sub(key);
+  }
+
+  if (auto it = current->find(subKey); it != current->end()) {
+    it->value() = std::forward<Type>(value);
+  } else {
+    current->put(subKey, std::forward<Type>(value));
+  }
+
   return *this;
 }
 } // namespace age::visualizer::settings
