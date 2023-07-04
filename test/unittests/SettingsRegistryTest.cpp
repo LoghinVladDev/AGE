@@ -87,3 +87,35 @@ TEST(SettingsRegistryTest, save) {
   ASSERT_EQ(r.getString("testJson.save2_testStr2"), "test3");
   ASSERT_EQ(r.getString("testJson.testStr"), "test4");
 }
+
+TEST(SettingsRegistryTest, savePath) {
+  auto& r = Registry::active();
+
+  r.put("save1_json", JsonObject());
+  Registry::save("save1_json");
+  Registry::reset();
+  ASSERT_TRUE(r.getJson("save1_json").empty());
+
+  r.put("save2_json.save3_json", JsonObject());
+  Registry::save("save2_json.save3_json");
+  Registry::reset();
+  ASSERT_TRUE(r.getJson("save2_json.save3_json").empty());
+
+  r.replace("save2_json.save3_json", "");
+  Registry::save("save2_json.save3_json");
+  Registry::reset();
+  ASSERT_TRUE(r.getString("save2_json.save3_json").empty());
+  r.replace("save2_json.save3_json", JsonObject());
+  Registry::save("save2_json.save3_json");
+  Registry::reset();
+  ASSERT_TRUE(r.getJson("save2_json.save3_json").empty());
+
+  r.replace("save2_json.save3_json", "");
+  Registry::save("save2_json.save3_json");
+  Registry::reset();
+  ASSERT_TRUE(r.getString("save2_json.save3_json").empty());
+  r.replace("save2_json.save3_json.save4_json", JsonObject());
+  Registry::save("save2_json.save3_json.save4_json");
+  Registry::reset();
+  ASSERT_TRUE(r.getJson("save2_json.save3_json.save4_json").empty());
+}

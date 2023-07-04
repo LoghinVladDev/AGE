@@ -51,7 +51,7 @@ public:
   }
 
   template <typename C, cds::meta::EnableIf<cds::meta::Not<cds::meta::IsSame<Base, cds::meta::Decay<C>>>::value> = 0>
-  [[nodiscard]] auto operator==(C&& object) const noexcept {
+  [[nodiscard]] auto operator==(C&& object) const noexcept -> bool {
     return operator<=>(std::forward<C>(object)) == Ordering::equivalent;
   }
 
