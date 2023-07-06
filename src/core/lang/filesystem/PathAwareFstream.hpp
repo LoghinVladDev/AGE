@@ -17,16 +17,16 @@ protected:
 
 template <typename Base> class IfstreamFunctions {
 public:
-  auto operator>>(auto& object) noexcept -> auto& {
-    static_cast<Base*>(this)->handle() << object;
+  template <typename T> auto operator>>(T&& object) noexcept -> auto& {
+    static_cast<Base*>(this)->handle() << std::forward<T>(object);
     return *this;
   }
 };
 
 template <typename Base> class OfstreamFunctions {
 public:
-  auto operator<<(auto&& object) noexcept -> auto& {
-    static_cast<Base*>(this)->handle() << object;
+  template <typename T> auto operator<<(T&& object) noexcept -> auto& {
+    static_cast<Base*>(this)->handle() << std::forward<T>(object);
     return *this;
   }
 };
