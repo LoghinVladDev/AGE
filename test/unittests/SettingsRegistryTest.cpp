@@ -6,13 +6,13 @@
 #include <visualizer/settings/SettingsRegistry.hpp>
 
 namespace {
-using namespace age::visualizer::settings;
+using age::visualizer::settings::registry;
 using namespace cds::json;
 } // namespace
 
 TEST(SettingsRegistryTest, preemptiveLoad) {
-  auto& r = Registry::active();
-  auto const& cr = Registry::active();
+  auto& r = registry();
+  auto const& cr = registry();
   ASSERT_EQ(r.getString("testStr"), "test");
   ASSERT_EQ(r.getInt("testInt"), 0);
   ASSERT_EQ(r.getLong("testInt"), 0l);
@@ -29,7 +29,7 @@ TEST(SettingsRegistryTest, preemptiveLoad) {
 }
 
 TEST(SettingsRegistryTest, put) {
-  auto& r = Registry::active();
+  auto& r = registry();
   r.put("put_testStr1", "test1");
   r.put("testJson.put_testStr1", "test2");
 
@@ -39,16 +39,16 @@ TEST(SettingsRegistryTest, put) {
 }
 
 TEST(SettingsRegistryTest, reset) {
-  auto& r = Registry::active();
+  auto& r = registry();
   r.put("reset_testStr1", "test1");
   r.put("testJson.reset_testStr1", "test2");
 
   r.getString("testJson.testStr") = "test3";
   ASSERT_EQ(r.getString("testJson.testStr"), "test3");
-  Registry::reset("testJson.testStr");
+  r.reset("testJson.testStr");
   ASSERT_EQ(r.getString("testJson.testStr"), "testSub");
 
-  Registry::reset("testJson");
+  r.reset("testJson");
 
   ASSERT_EQ(r.getString("reset_testStr1"), "test1");
 
@@ -56,21 +56,21 @@ TEST(SettingsRegistryTest, reset) {
   ASSERT_THROW((void) r.getJson("testJson").getString("reset_testStr1"), cds::KeyException);
 
   r.put("testJson.reset_testStr1", "test2");
-  Registry::reset();
+  r.reset();
   ASSERT_THROW((void) r.getString("reset_testStr1"), cds::KeyException);
   ASSERT_THROW((void) r.getString("testJson.reset_testStr1"), cds::KeyException);
   ASSERT_THROW((void) r.getJson("testJson").getString("reset_testStr1"), cds::KeyException);
 }
 
 TEST(SettingsRegistryTest, save) {
-  auto& r = Registry::active();
+  auto& r = registry();
 
   r.put("save1_testStr1", "test1");
   r.getString("testStr") = "test2";
   r.put("testJson.save1_testStr2", "test3");
   r.getString("testJson.testStr") = "test4";
-  Registry::save("testJson");
-  Registry::reset();
+  r.save("testJson");
+  r.reset();
   ASSERT_THROW((void) r.getString("save1_testStr1"), cds::KeyException);
   ASSERT_NE("testStr", "test2");
   ASSERT_EQ(r.getString("testJson.save1_testStr2"), "test3");
@@ -80,8 +80,8 @@ TEST(SettingsRegistryTest, save) {
   r.getString("testStr") = "test2";
   r.put("testJson.save2_testStr2", "test3");
   r.getString("testJson.testStr") = "test4";
-  Registry::save();
-  Registry::reset();
+  r.save();
+  r.reset();
   ASSERT_EQ(r.getString("save2_testStr1"), "test1");
   ASSERT_EQ(r.getString("testStr"), "test2");
   ASSERT_EQ(r.getString("testJson.save2_testStr2"), "test3");
@@ -89,33 +89,33 @@ TEST(SettingsRegistryTest, save) {
 }
 
 TEST(SettingsRegistryTest, savePath) {
-  auto& r = Registry::active();
+  auto& r = registry();
 
   r.put("save1_json", JsonObject());
-  Registry::save("save1_json");
-  Registry::reset();
+  r.save("save1_json");
+  r.reset();
   ASSERT_TRUE(r.getJson("save1_json").empty());
 
   r.put("save2_json.save3_json", JsonObject());
-  Registry::save("save2_json.save3_json");
-  Registry::reset();
+  r.save("save2_json.save3_json");
+  r.reset();
   ASSERT_TRUE(r.getJson("save2_json.save3_json").empty());
 
   r.replace("save2_json.save3_json", "");
-  Registry::save("save2_json.save3_json");
-  Registry::reset();
+  r.save("save2_json.save3_json");
+  r.reset();
   ASSERT_TRUE(r.getString("save2_json.save3_json").empty());
   r.replace("save2_json.save3_json", JsonObject());
-  Registry::save("save2_json.save3_json");
-  Registry::reset();
+  r.save("save2_json.save3_json");
+  r.reset();
   ASSERT_TRUE(r.getJson("save2_json.save3_json").empty());
 
   r.replace("save2_json.save3_json", "");
-  Registry::save("save2_json.save3_json");
-  Registry::reset();
+  r.save("save2_json.save3_json");
+  r.reset();
   ASSERT_TRUE(r.getString("save2_json.save3_json").empty());
   r.replace("save2_json.save3_json.save4_json", JsonObject());
-  Registry::save("save2_json.save3_json.save4_json");
-  Registry::reset();
+  r.save("save2_json.save3_json.save4_json");
+  r.reset();
   ASSERT_TRUE(r.getJson("save2_json.save3_json.save4_json").empty());
 }

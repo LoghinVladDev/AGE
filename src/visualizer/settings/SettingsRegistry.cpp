@@ -46,123 +46,6 @@ auto get(auto& json, StringRef key) noexcept(false) -> auto& {
   return current->get(subKey);
 }
 
-template <typename T, bool = cds::meta::IsVoid<T>::value> class AsyncResultContainer {
-public:
-  template <typename F, typename... A> auto awaitResult(F&& fn, A&&... a) { fn(std::forward<A>(a)...); }
-};
-
-template <typename T> class AsyncResultContainer<T, false> {
-public:
-  template <typename F, typename... A> auto awaitResult(F&& fn, A&&... a) { value = fn(std::forward<A>(a)...); }
-
-private:
-  T value;
-};
-
-template <typename T, typename R, bool = cds::meta::IsVoid<R>::value> class AwaitWrapper {};
-
-template <typename T, typename R> class AwaitWrapper<T, R, true> {
-public:
-  auto await() noexcept -> void { static_cast<T*>(this)->join(); }
-};
-
-template <typename T, typename R> class AwaitWrapper<T, R, false> {
-public:
-  auto await() noexcept -> R {
-    static_cast<T*>(this)->join();
-    return static_cast<T*>(this)->_result.value;
-  }
-};
-
-template <typename Result, typename... Args> class Async : public AwaitWrapper<Async<Result, Args...>, Result> {
-public:
-  using Function = cds::Function<Result(Args...)>;
-
-  Async() noexcept = delete;
-  Async(Async const&) noexcept = delete;
-  Async(Async&&) noexcept = delete;
-  ~Async() noexcept { join(); }
-
-  auto operator=(Async const&) noexcept = delete;
-  auto operator=(Async&&) noexcept = delete;
-
-  template <typename F> explicit(false) Async(F&& function) noexcept(false) : _fn(std::forward<F>(function)) {}
-
-  auto reset() {
-    _ended.clear(std::memory_order_release);
-    std::get<2>(_sync) = false;
-    std::get<3>(_sync) = false;
-  }
-
-  template <typename... A> auto trigger(A&&... args) noexcept(false) -> void {
-    reset();
-    _executer = new Runnable([this, args...]() mutable {
-      auto& [mutex, condition, startStatus, endStatus] = _sync;
-      unique_lock lock(mutex);
-      condition.wait(lock, [&startStatus] { return startStatus; });
-      _result.awaitResult(_fn, args...);
-      endStatus = true;
-      lock.unlock();
-      condition.notify_one();
-    });
-    (void) _started.test_and_set(std::memory_order_release);
-    _executer->start();
-
-    auto& [mutex, condition, startStatus, endStatus] = _sync;
-    auto prepareNotify = [&mutex, &startStatus] {
-      lock_guard _(mutex);
-      startStatus = true;
-    };
-
-    prepareNotify();
-    condition.notify_one();
-  }
-
-  [[nodiscard]] auto notStarted() const noexcept -> bool { return !std::get<2>(_sync); }
-
-private:
-  friend class AwaitWrapper<Async<Result, Args...>, Result>;
-  auto join() noexcept {
-    if (!_started.test(std::memory_order_acquire)) {
-      return;
-    }
-
-    auto& [mutex, condition, startStatus, endStatus] = _sync;
-    auto prepareStop = [&mutex, &condition, &endStatus] {
-      unique_lock lock(mutex);
-      condition.wait(lock, [&endStatus] { return endStatus; });
-    };
-
-    if (_ended.test_and_set()) {
-      return;
-    }
-
-    prepareStop();
-    _executer->join();
-    _executer.release();
-  }
-
-  Function _fn {nullptr};
-  [[no_unique_address]] AsyncResultContainer<Result> _result;
-  UniquePointer<Thread> _executer {nullptr};
-  tuple<mutex, condition_variable, bool, bool> _sync;
-  atomic_flag _started;
-  atomic_flag _ended;
-};
-
-auto const loader = cds::makeUnique<Async<void, JsonObject*, JsonObject*>>([](JsonObject* main, JsonObject* copy) {
-  main->put("testStr", "test");
-  main->put("testInt", 0);
-  main->put("testFloat", 0.0f);
-  main->put("testBool", false);
-  main->put("testArray", JsonArray());
-  main->put("testJson", JsonObject().put("testStr", "testSub"));
-  *copy = *main;
-});
-
-auto const saver = cds::makeUnique<Async<void, Path, JsonObject const*>>(
-    [](Path path, JsonObject const* json) { std::cout << "Trigger save of json to '" << path << "'\n"; });
-
 auto convertToPath(StringRef key) noexcept -> String {
   String path = "./";
   while (key) {
@@ -179,30 +62,50 @@ auto convertToPath(StringRef key) noexcept -> String {
   }
   return path + ".json";
 }
+
+UniquePointer<Registry> _registry = nullptr;
 } // namespace
+
+auto loaderFn(JsonObject* main, JsonObject* copy) {
+  main->put("testStr", "test");
+  main->put("testInt", 0);
+  main->put("testFloat", 0.0f);
+  main->put("testBool", false);
+  main->put("testArray", JsonArray());
+  main->put("testJson", JsonObject().put("testStr", "testSub"));
+  *copy = *main;
+}
+
+auto saverFn(Path const& path, JsonObject const* json) {
+  std::ofstream outFile(path.toString());
+  std::cout << path.toString() << '\n';
+  outFile << dump(*json, 2u);
+}
 
 auto Registry::sub(StringRef& key) noexcept -> StringRef { return ::sub(key); }
 
 auto Registry::active() noexcept(false) -> Registry& {
-  if (loader->notStarted()) {
-    triggerLoad();
+  if (!_registry) {
+    _registry = cds::makeUnique<Registry>(Token {});
   }
-  loader->await();
-  return *_active;
+
+  if (!_registry->_loaded) {
+    _registry->_loader->await();
+    _registry->_loaded = true;
+  }
+
+  return *_registry;
 }
 
-auto Registry::triggerLoad() noexcept(false) -> void {
-  if (!_active) {
-    _active = cds::makeUnique<Registry>(Token {});
-    _stored = cds::makeUnique<Registry>(Token {});
-  }
-
-  loader->trigger(&_active->_contents, &_stored->_contents);
+Registry::Registry([[maybe_unused]] Token) noexcept :
+    _loader(cds::makeUnique<AsyncRunner<void, JsonObject*, JsonObject*>>(loaderFn)),
+    _saver(cds::makeUnique<AsyncRunner<void, Path, JsonObject const*>>(saverFn)) {
+  _loader->trigger(&_active, &_stored);
 }
 
 auto Registry::reset(StringRef key) noexcept(false) -> void {
-  auto* lJson = &_active->_contents;
-  auto* rJson = &_stored->_contents;
+  auto* lJson = &_active;
+  auto* rJson = &_stored;
 
   if (!key) {
     *lJson = *rJson;
@@ -228,8 +131,9 @@ auto Registry::replaceIfMissing(JsonObject* pJson, StringRef key, bool overwrite
 }
 
 auto Registry::save(StringRef key) noexcept(false) -> void {
-  auto lJson = &_stored->_contents;
-  auto rJson = &_active->_contents;
+  _saver->await();
+  auto lJson = &_stored;
+  auto rJson = &_active;
   String savePath = key ? convertToPath(key) : defaultPath;
 
   if (key) {
@@ -241,34 +145,30 @@ auto Registry::save(StringRef key) noexcept(false) -> void {
       rJson = &rJson->getJson(subKey);
       subKey = sub(key);
     }
-    saver->await();
     replaceIfMissing(lJson, subKey);
     lJson->get(subKey) = rJson->get(subKey);
   } else {
-    saver->await();
     *lJson = *rJson;
   }
 
-  saver->trigger(savePath, lJson);
+  _saver->trigger(savePath, lJson);
 }
 
-auto Registry::getInt(StringRef key) const noexcept(false) -> int { return get(_contents, key).getInt(); }
-auto Registry::getLong(StringRef key) const noexcept(false) -> long { return get(_contents, key).getLong(); }
-auto Registry::getFloat(StringRef key) const noexcept(false) -> float { return get(_contents, key).getFloat(); }
-auto Registry::getDouble(StringRef key) const noexcept(false) -> double { return get(_contents, key).getDouble(); }
-
-auto Registry::getString(StringRef key) const noexcept(false) -> String const& {
-  return get(_contents, key).getString();
-}
+auto Registry::getInt(StringRef key) const noexcept(false) -> int { return get(_active, key).getInt(); }
+auto Registry::getLong(StringRef key) const noexcept(false) -> long { return get(_active, key).getLong(); }
+auto Registry::getFloat(StringRef key) const noexcept(false) -> float { return get(_active, key).getFloat(); }
+auto Registry::getDouble(StringRef key) const noexcept(false) -> double { return get(_active, key).getDouble(); }
+auto Registry::getString(StringRef key) const noexcept(false) -> String const& { return get(_active, key).getString(); }
+auto Registry::getJson(StringRef key) const noexcept(false) -> JsonObject const& { return get(_active, key).getJson(); }
+auto Registry::getString(StringRef key) noexcept(false) -> String& { return get(_active, key).getString(); }
+auto Registry::getArray(StringRef key) noexcept(false) -> JsonArray& { return get(_active, key).getArray(); }
+auto Registry::getJson(StringRef key) noexcept(false) -> JsonObject& { return get(_active, key).getJson(); }
 
 auto Registry::getArray(StringRef key) const noexcept(false) -> JsonArray const& {
-  return get(_contents, key).getArray();
+  return get(_active, key).getArray();
 }
 
-auto Registry::getJson(StringRef key) const noexcept(false) -> JsonObject const& {
-  return get(_contents, key).getJson();
+Registry::~Registry() noexcept {
+  _saver->await();
+  _loader->await();
 }
-
-auto Registry::getString(StringRef key) noexcept(false) -> String& { return get(_contents, key).getString(); }
-auto Registry::getArray(StringRef key) noexcept(false) -> JsonArray& { return get(_contents, key).getArray(); }
-auto Registry::getJson(StringRef key) noexcept(false) -> JsonObject& { return get(_contents, key).getJson(); }
