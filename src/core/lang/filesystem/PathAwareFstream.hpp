@@ -38,6 +38,7 @@ template <typename Base> class FstreamFunctions {
 
 class PathAwareFstream :
     public meta::PathAwareDirectoryCreator,
+    public meta::FstreamFunctions<PathAwareFstream>,
     public meta::IfstreamFunctions<PathAwareFstream>,
     public meta::OfstreamFunctions<PathAwareFstream> {
 public:
@@ -52,7 +53,10 @@ private:
   std::fstream file;
 };
 
-class PathAwareOfstream : public meta::PathAwareDirectoryCreator, public meta::OfstreamFunctions<PathAwareOfstream> {
+class PathAwareOfstream :
+    public meta::PathAwareDirectoryCreator,
+    public meta::FstreamFunctions<PathAwareOfstream>,
+    public meta::OfstreamFunctions<PathAwareOfstream> {
 public:
   explicit PathAwareOfstream(cds::StringView path, std::ios::openmode mode = std::ios::out) noexcept(false) :
       meta::PathAwareDirectoryCreator(path), file(path.cStr(), mode) {}
@@ -61,17 +65,6 @@ public:
 
 private:
   std::ofstream file;
-};
-
-class PathAwareIfstream : public meta::PathAwareDirectoryCreator, public meta::IfstreamFunctions<PathAwareIfstream> {
-public:
-  explicit PathAwareIfstream(cds::StringView path, std::ios::openmode mode = std::ios::in) noexcept(false) :
-      meta::PathAwareDirectoryCreator(path), file(path.cStr(), mode) {}
-
-  [[nodiscard]] constexpr auto handle() noexcept -> auto& { return file; }
-
-private:
-  std::ifstream file;
 };
 } // namespace age
 
