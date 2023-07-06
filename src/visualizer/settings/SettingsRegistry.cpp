@@ -7,6 +7,7 @@
 #include <CDS/threading/Thread>
 #include <atomic>
 #include <condition_variable>
+#include <lang/filesystem/PathAwareFstream.hpp>
 #include <mutex>
 #include <tuple>
 
@@ -77,7 +78,7 @@ auto loaderFn(JsonObject* main, JsonObject* copy) {
 }
 
 auto saverFn(Path const& path, JsonObject const* json) {
-  std::ofstream outFile(path.toString());
+  PathAwareOfstream outFile(path.toString());
   std::cout << path.toString() << '\n';
   outFile << dump(*json, 2u);
 }
