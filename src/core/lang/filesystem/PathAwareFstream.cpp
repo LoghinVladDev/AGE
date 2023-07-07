@@ -5,6 +5,7 @@
 #include "PathAwareFstream.hpp"
 #include <CDS/Array>
 #include <filesystem>
+#include <platform/PathUtils.hpp>
 
 namespace {
 using cds::Array;
@@ -15,6 +16,6 @@ using std::filesystem::create_directories;
 
 namespace age::meta {
 PathAwareDirectoryCreator::PathAwareDirectoryCreator(StringView path) noexcept(false) {
-  create_directories(string_view(path.cStr(), path.findLast('/')));
+  create_directories(string_view(path.cStr(), path.findLast(directorySeparator)));
 }
 } // namespace age::meta

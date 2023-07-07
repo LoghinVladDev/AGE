@@ -27,6 +27,7 @@ set(
     UNIT_TEST_SOURCES
     DummyTest.cpp
     UnitTestsMain.cpp
+    GeneratorTest.cpp
     StringRefTest.cpp
 )
 

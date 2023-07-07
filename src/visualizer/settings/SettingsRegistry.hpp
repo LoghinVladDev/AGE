@@ -44,6 +44,9 @@ public:
   explicit(false) Registry(Token) noexcept;
   ~Registry() noexcept;
 
+  static constexpr auto const defaultPath = "./config";
+  static constexpr auto const rootFileName = "./config/registryBase.json";
+
 private:
   static auto sub(StringRef& key) noexcept -> StringRef;
   static auto replaceIfMissing(cds::json::JsonObject* pJson, StringRef key, bool overwriteType = false) noexcept
@@ -54,7 +57,6 @@ private:
   cds::json::JsonObject _stored;
   cds::UniquePointer<AsyncRunner<void, cds::json::JsonObject*, cds::json::JsonObject*>> const _loader;
   cds::UniquePointer<AsyncRunner<void, cds::filesystem::Path, cds::json::JsonObject const*>> const _saver;
-  static constexpr auto const defaultPath = "./registryBase.json";
   static constexpr cds::StringView const pathInternalPrefix = "__resourcepath__";
 };
 

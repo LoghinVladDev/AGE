@@ -9,6 +9,7 @@
 #include <condition_variable>
 #include <lang/filesystem/PathAwareFstream.hpp>
 #include <mutex>
+#include <platform/PathUtils.hpp>
 #include <tuple>
 
 namespace {
@@ -48,7 +49,8 @@ auto get(auto& json, StringRef key) noexcept(false) -> auto& {
 }
 
 auto convertToPath(StringRef key) noexcept -> String {
-  String path = "./";
+  String path = Registry::defaultPath;
+  path += directorySeparator;
   while (key) {
     auto dotPos = key.find('.');
     if (dotPos == StringRef::npos) {
@@ -58,7 +60,7 @@ auto convertToPath(StringRef key) noexcept -> String {
     path += StringView(key.takeFront(dotPos));
     key = key.dropFront(dotPos + 1);
     if (key) {
-      path += "/";
+      path += directorySeparator;
     }
   }
   return path + ".json";
