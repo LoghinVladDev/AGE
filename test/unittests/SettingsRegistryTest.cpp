@@ -2,6 +2,7 @@
 // Created by Vlad-Andrei Loghin on 02.07.23.
 //
 
+#include <filesystem>
 #include <gtest/gtest.h>
 #include <visualizer/settings/SettingsRegistry.hpp>
 
@@ -9,6 +10,10 @@ namespace {
 using age::visualizer::settings::registry;
 using namespace cds::json;
 } // namespace
+
+TEST(SettingsRegistryTest, storeExistingConfig) {}
+
+TEST(SettingsRegistryTest, prepareTestConfig) {}
 
 TEST(SettingsRegistryTest, preemptiveLoad) {
   auto& r = registry();
@@ -118,4 +123,28 @@ TEST(SettingsRegistryTest, savePath) {
   r.save("save2_json.save3_json.save4_json");
   r.reset();
   ASSERT_TRUE(r.getJson("save2_json.save3_json.save4_json").empty());
+}
+
+TEST(SettingsRegistryTest, checkSavedConfigs) {
+  ASSERT_TRUE(std::filesystem::exists("./config"));
+  ASSERT_TRUE(std::filesystem::exists("./config/save2_json"));
+  ASSERT_TRUE(std::filesystem::exists("./config/save2_json/save3_json"));
+
+  ASSERT_TRUE(std::filesystem::is_directory("./config"));
+  ASSERT_TRUE(std::filesystem::is_directory("./config/save2_json"));
+  ASSERT_TRUE(std::filesystem::is_directory("./config/save2_json/save3_json"));
+
+  ASSERT_TRUE(std::filesystem::exists("./config/registryBase.json"));
+  ASSERT_TRUE(std::filesystem::exists("./config/save1_json.json"));
+  ASSERT_TRUE(std::filesystem::exists("./config/testJson.json"));
+
+  ASSERT_TRUE(std::filesystem::is_regular_file("./config/registryBase.json"));
+  ASSERT_TRUE(std::filesystem::is_regular_file("./config/save1_json.json"));
+  ASSERT_TRUE(std::filesystem::is_regular_file("./config/testJson.json"));
+
+  ASSERT_TRUE(std::filesystem::exists("./config/save2_json/save3_json.json"));
+}
+
+TEST(SettingsRegistryTest, removeTestConfigs) {
+  //  std::filesystem::remove_all("./config");
 }

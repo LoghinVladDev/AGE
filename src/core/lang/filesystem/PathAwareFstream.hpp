@@ -29,6 +29,8 @@ public:
     static_cast<Base*>(this)->handle() << std::forward<T>(object);
     return *this;
   }
+
+  auto write(char const* buffer, std::size_t size) { static_cast<Base*>(this)->handle().write(buffer, size); }
 };
 
 template <typename Base> class FstreamFunctions {

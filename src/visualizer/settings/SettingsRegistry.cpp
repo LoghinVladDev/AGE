@@ -26,6 +26,104 @@ using std::mutex;
 using std::tuple;
 using std::unique_lock;
 
+constexpr auto const paddingBufferSize = 128;
+constexpr char const paddingBuffer[paddingBufferSize + 1] = "                                "
+                                                            "                                "
+                                                            "                                "
+                                                            "                                ";
+
+auto addIndent(auto& out, int indent) -> void {
+  while (indent > 0) {
+    out.write(paddingBuffer, std::min(indent, paddingBufferSize));
+    indent -= paddingBufferSize;
+  }
+}
+
+auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int indent) -> void;
+auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int indent) -> void;
+
+auto filteredDump(auto& out, JsonElement const& object, int currentIndent, int indent) -> void {
+  if (object.isArray()) {
+    filteredDump(out, object.getArray(), currentIndent, indent);
+  }
+
+  if (object.isString()) {
+    out << '\"' << object.getString() << '\"';
+  }
+
+  if (object.isBoolean()) {
+    out << (object.getBoolean() ? "true" : "false");
+  }
+
+  if (object.isLong()) {
+    out << object.getLong();
+  }
+
+  if (object.isDouble()) {
+    out << object.getDouble();
+  }
+}
+
+auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int indent) -> void {
+  if (object.empty()) {
+    out << "[]";
+    return;
+  }
+
+  out << "[\n";
+  auto const nextIndent = currentIndent + indent;
+
+  auto it = object.begin();
+  addIndent(out, nextIndent);
+  filteredDump(out, *it, nextIndent, indent);
+  ++it;
+
+  for (auto end = object.end(); it != end; ++it) {
+    if (it->isJson()) {
+      continue;
+    }
+
+    out << ",\n";
+
+    addIndent(out, nextIndent);
+    filteredDump(out, *it, nextIndent, indent);
+  }
+
+  out << "]";
+}
+
+auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int indent) -> void {
+  if (object.empty()) {
+    out << "{}";
+    return;
+  }
+
+  out << "{\n";
+  auto const nextIndent = currentIndent + indent;
+
+  auto it = object.begin();
+  addIndent(out, nextIndent);
+  out << '\"' << it->key() << "\" : \"";
+  filteredDump(out, it->value(), nextIndent, indent);
+  ++it;
+
+  for (auto end = object.end(); it != end; ++it) {
+    if (it->value().isJson()) {
+      continue;
+    }
+
+    out << ",\n";
+
+    addIndent(out, nextIndent);
+    out << '\"' << it->key() << "\" : \"";
+    filteredDump(out, it->value(), nextIndent, indent);
+  }
+
+  out << "}";
+}
+
+auto filteredDump(auto& out, JsonObject const& object, int indent = 2) -> void { filteredDump(out, object, 0, indent); }
+
 auto sub(StringRef& key) noexcept -> StringRef {
   auto dotPos = key.find('.');
   if (dotPos == StringRef::npos) {
@@ -79,10 +177,30 @@ auto loaderFn(JsonObject* main, JsonObject* copy) {
   *copy = *main;
 }
 
+auto saveUnderlying(Path const& path, String const& key, JsonObject const& json) -> void {
+  std::cout << "  Indirectly saving: " << path / (key + ".json") << std::endl;
+
+  for (auto const& entry : json) {
+    if (entry.value().isJson()) {
+      saveUnderlying(path / key, entry.key(), entry.value().getJson());
+    }
+  }
+
+  PathAwareOfstream outFile((path / (key + ".json")).toString());
+  filteredDump(outFile, json);
+}
+
 auto saverFn(Path const& path, JsonObject const* json) {
+  std::cout << "Started save of: " << path.toString() << std::endl;
+
+  for (auto const& entry : *json) {
+    if (entry.value().isJson()) {
+      saveUnderlying(path.parent(), entry.key(), entry.value().getJson());
+    }
+  }
+
   PathAwareOfstream outFile(path.toString());
-  std::cout << path.toString() << '\n';
-  outFile << dump(*json, 2u);
+  filteredDump(outFile, *json);
 }
 
 auto Registry::sub(StringRef& key) noexcept -> StringRef { return ::sub(key); }
@@ -137,7 +255,7 @@ auto Registry::save(StringRef key) noexcept(false) -> void {
   _saver->await();
   auto lJson = &_stored;
   auto rJson = &_active;
-  String savePath = key ? convertToPath(key) : defaultPath;
+  String savePath = key ? convertToPath(key) : rootFileName;
 
   if (key) {
     auto subKey = sub(key);
@@ -172,6 +290,7 @@ auto Registry::getArray(StringRef key) const noexcept(false) -> JsonArray const&
 }
 
 Registry::~Registry() noexcept {
+  std::cout << dump(registry()._stored) << '\n';
   _saver->await();
   _loader->await();
 }
