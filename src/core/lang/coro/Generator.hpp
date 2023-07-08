@@ -29,18 +29,18 @@ public:
   class Iterator {
   public:
     explicit Iterator(Generator<T>&& generator) noexcept : _generator(std::move(generator)) {}
-    auto operator++() noexcept -> Iterator& {
+    auto operator++() -> Iterator& {
       _generator.acquire();
       return *this;
     }
 
-    auto operator*() noexcept -> meta::MovableIterableReturn<T>::Type {
+    auto operator*() -> meta::MovableIterableReturn<T>::Type {
       _generator.acquire();
       _generator._acquired = false;
       return _generator._handle.promise()._value;
     }
 
-    auto operator!=(DefaultSentinel) noexcept -> bool { return !_generator.empty(); }
+    auto operator!=(DefaultSentinel) -> bool { return !_generator.empty(); }
 
   private:
     Generator _generator;

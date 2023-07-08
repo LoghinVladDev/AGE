@@ -16,6 +16,8 @@
 
 namespace age {
 namespace meta {
+template <typename T, typename R, bool = cds::meta::IsVoid<R>::value> class AwaitWrapper {};
+
 template <typename T, bool = cds::meta::IsVoid<T>::value> class AsyncResultContainer {
 public:
   template <typename F, typename... A> auto awaitResult(F&& fn, A&&... a) { fn(std::forward<A>(a)...); }
@@ -26,10 +28,9 @@ public:
   template <typename F, typename... A> auto awaitResult(F&& fn, A&&... a) { value = fn(std::forward<A>(a)...); }
 
 private:
+  template <typename, typename, bool> friend class AwaitWrapper;
   T value;
 };
-
-template <typename T, typename R, bool = cds::meta::IsVoid<R>::value> class AwaitWrapper {};
 
 template <typename T, typename R> class AwaitWrapper<T, R, true> {
 public:

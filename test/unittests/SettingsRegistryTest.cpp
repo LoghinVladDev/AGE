@@ -33,14 +33,47 @@ TEST(SettingsRegistryTest, prepareTestConfig) {
   "testBool" : false,
   "testArray" : []
 })";
+
   std::ofstream testJson("./config/testJson.json");
   testJson <<
       R"({
   "testStr" : "testSub"
 })";
 
-  registryBase.close();
-  testJson.close();
+  std::ofstream notAJson("./config/testXml.xml");
+  notAJson <<
+      R"(<test>
+  <property>test</property>
+</test>
+)";
+
+  std::ofstream erronousJson1("./config/errJson1.json");
+  erronousJson1 << R"({)";
+
+  std::ofstream erronousJson2("./config/errJson2.json");
+  erronousJson2 << R"({ "tes })";
+
+  std::ofstream erronousJson3("./config/errJson3.json");
+  erronousJson3 << R"({ "tes" : "te })";
+
+  std::ofstream readProtFile("./config/readProt.json");
+  readProtFile << "{}\n";
+  readProtFile.close();
+  std::filesystem::permissions("./config/readProt.json",
+                               std::filesystem::perms::group_read | std::filesystem::perms::others_read
+                                   | std::filesystem::perms::owner_read,
+                               std::filesystem::perm_options::remove);
+
+  std::filesystem::create_directories("./config/badly_referencing");
+  std::filesystem::create_directories("./config/badly_referencing/bad_key_not_json");
+  std::ofstream badlyReferenced("./config/badly_referencing/bad_key_not_json.json");
+  std::ofstream referencing("./config/badly_referencing.json");
+
+  badlyReferenced << "{}";
+  referencing <<
+      R"({
+  "bad_key_not_json" : "test"
+})";
 }
 
 TEST(SettingsRegistryTest, preemptiveLoad) {
@@ -153,6 +186,16 @@ TEST(SettingsRegistryTest, savePath) {
   ASSERT_TRUE(r.getJson("save2_json.save3_json.save4_json").empty());
 }
 
+TEST(SettingsRegistryTest, extrasForCoverage) {
+  auto& r = registry();
+  r.put("testArray_filtered", JsonArray().pushBack(JsonObject()).pushBack("testStr123"));
+  r.put("testArray_filtered2", JsonArray().pushBack("testStr1"));
+  r.put("testArray_filtered3", JsonArray().pushBack("testStr1").pushBack(JsonObject()));
+  r.put("testArray_filtered4", JsonArray().pushBack("testStr1").pushBack(JsonObject()).pushBack("testStr2"));
+  r.put("testBoolTrue", true);
+  r.save();
+}
+
 TEST(SettingsRegistryTest, checkSavedConfigs) {
   age::visualizer::settings::Registry::awaitPending();
   ASSERT_TRUE(std::filesystem::exists("./config"));
@@ -178,15 +221,17 @@ TEST(SettingsRegistryTest, checkSavedConfigs) {
   ASSERT_TRUE(std::filesystem::exists("./config/save2_json/save3_json/save4_json.json"));
   ASSERT_TRUE(std::filesystem::is_regular_file("./config/save2_json/save3_json/save4_json.json"));
 
-  ASSERT_FALSE(std::filesystem::exists("./config/save2_json.json"));
+  ASSERT_TRUE(std::filesystem::exists("./config/save2_json.json"));
+  ASSERT_TRUE(std::filesystem::is_regular_file("./config/save2_json.json"));
 
   auto registryBase = cds::json::loadJson("./config/registryBase.json");
   auto testJson = cds::json::loadJson("./config/testJson.json");
   auto save1_json = cds::json::loadJson("./config/save1_json.json");
+  auto save2_json = cds::json::loadJson("./config/save2_json.json");
   auto save3_json = cds::json::loadJson("./config/save2_json/save3_json.json");
   auto save4_json = cds::json::loadJson("./config/save2_json/save3_json/save4_json.json");
 
-  ASSERT_EQ(registryBase.keys().size(), 6u);
+  ASSERT_EQ(registryBase.keys().size(), 11u);
   ASSERT_TRUE(registryBase.keys().containsAllOf(
       {"testStr", "testInt", "testFloat", "testBool", "testArray", "save2_testStr1"}));
   ASSERT_EQ(registryBase.getString("testStr"), "test2");
@@ -196,6 +241,24 @@ TEST(SettingsRegistryTest, checkSavedConfigs) {
   ASSERT_TRUE(registryBase.getArray("testArray").empty());
   ASSERT_EQ(registryBase.getString("save2_testStr1"), "test1");
 
+  ASSERT_EQ(registryBase.getArray("testArray_filtered").size(), 2u);
+  ASSERT_TRUE(registryBase.getArray("testArray_filtered")[0].getJson().empty());
+  ASSERT_EQ(registryBase.getArray("testArray_filtered")[1].getString(), "testStr123");
+
+  ASSERT_EQ(registryBase.getArray("testArray_filtered2").size(), 1u);
+  ASSERT_EQ(registryBase.getArray("testArray_filtered2")[0].getString(), "testStr1");
+
+  ASSERT_EQ(registryBase.getArray("testArray_filtered3").size(), 2u);
+  ASSERT_EQ(registryBase.getArray("testArray_filtered3")[0].getString(), "testStr1");
+  ASSERT_TRUE(registryBase.getArray("testArray_filtered3")[1].getJson().empty());
+
+  ASSERT_EQ(registryBase.getArray("testArray_filtered4").size(), 3u);
+  ASSERT_EQ(registryBase.getArray("testArray_filtered4")[0].getString(), "testStr1");
+  ASSERT_TRUE(registryBase.getArray("testArray_filtered4")[1].getJson().empty());
+  ASSERT_EQ(registryBase.getArray("testArray_filtered4")[2].getString(), "testStr2");
+
+  ASSERT_EQ(registryBase.getBoolean("testBoolTrue"), true);
+
   ASSERT_TRUE(save1_json.empty());
 
   ASSERT_EQ(testJson.keys().size(), 3u);
@@ -204,11 +267,9 @@ TEST(SettingsRegistryTest, checkSavedConfigs) {
   ASSERT_EQ(testJson.getString("save1_testStr2"), "test3");
   ASSERT_EQ(testJson.getString("save2_testStr2"), "test3");
 
-  ASSERT_EQ(save3_json.keys().size(), 1u);
-  ASSERT_TRUE(save3_json.keys().containsAllOf({"save3_json"}));
-  ASSERT_EQ(save3_json.getString("save3_json"), "");
-
+  ASSERT_TRUE(save3_json.keys().empty());
   ASSERT_TRUE(save4_json.empty());
+  ASSERT_TRUE(save2_json.empty());
 }
 
 TEST(SettingsRegistryTest, restoreBackup) {

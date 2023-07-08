@@ -5,6 +5,9 @@
 #include <core/lang/coro/Generator.hpp>
 #include <gtest/gtest.h>
 
+#include <CDS/Object>
+#include <CDS/exception/IllegalArgumentException>
+
 namespace {
 using age::Generator;
 template <typename T> struct Tracked {
@@ -77,4 +80,24 @@ TEST(GeneratorTest, copyCount) {
   ASSERT_EQ(Tracked<int>::moved, 0);
   ASSERT_EQ(Tracked<int>::copyAssigned, 0);
   ASSERT_EQ(Tracked<int>::moveAssigned, 10);
+}
+
+TEST(GeneratorTest, throwingGenerator) {
+  auto iotaThrowing = [](int limit) -> Generator<int> {
+    for (int i = 0; true; ++i) {
+      if (i > 5) {
+        throw cds::IllegalArgumentException("Argument limited to 5");
+      }
+      co_yield i;
+    }
+  };
+
+  int tracking = 0;
+  try {
+    for (auto e : iotaThrowing(10)) {
+      ASSERT_EQ(tracking++, e);
+    }
+  } catch (cds::Exception const& e) {
+    ASSERT_EQ(tracking, 6u);
+  }
 }

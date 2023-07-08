@@ -43,6 +43,10 @@ auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int ind
 auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int indent) -> void;
 
 auto filteredDump(auto& out, JsonElement const& object, int currentIndent, int indent) -> void {
+  if (object.isJson()) {
+    filteredDump(out, object.getJson(), currentIndent, indent);
+  }
+
   if (object.isArray()) {
     filteredDump(out, object.getArray(), currentIndent, indent);
   }
@@ -79,21 +83,18 @@ auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int ind
   ++it;
 
   for (auto end = object.end(); it != end; ++it) {
-    if (it->isJson()) {
-      continue;
-    }
-
     out << ",\n";
-
     addIndent(out, nextIndent);
     filteredDump(out, *it, nextIndent, indent);
   }
 
+  out << "\n";
+  addIndent(out, currentIndent);
   out << "]";
 }
 
 auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int indent) -> void {
-  if (object.empty()) {
+  if (object.empty() || object.count([](auto const& e) { return !e.value().isJson(); }) == 0u) {
     out << "{}";
     return;
   }
@@ -102,9 +103,13 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
   auto const nextIndent = currentIndent + indent;
 
   auto it = object.begin();
-  addIndent(out, nextIndent);
-  out << '\"' << it->key() << "\" : ";
-  filteredDump(out, it->value(), nextIndent, indent);
+  bool skippedFirst = true;
+  if (!it->value().isJson()) {
+    skippedFirst = false;
+    addIndent(out, nextIndent);
+    out << '\"' << it->key() << "\" : ";
+    filteredDump(out, it->value(), nextIndent, indent);
+  }
   ++it;
 
   for (auto end = object.end(); it != end; ++it) {
@@ -112,14 +117,19 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
       continue;
     }
 
-    out << ",\n";
+    if (!skippedFirst) {
+      out << ",\n";
+      skippedFirst = false;
+    }
 
     addIndent(out, nextIndent);
     out << '\"' << it->key() << "\" : ";
     filteredDump(out, it->value(), nextIndent, indent);
   }
 
-  out << "\n}";
+  out << "\n";
+  addIndent(out, currentIndent);
+  out << "}";
 }
 
 auto filteredDump(auto& out, JsonObject const& object, int indent = 2) -> void { filteredDump(out, object, 0, indent); }
@@ -180,9 +190,10 @@ auto recursiveLoad(Map<String, JsonElement>& map, Path const& path) noexcept -> 
         map.emplace(key, loadJson(path / file));
       } catch (cds::Exception const& unexpectedError) {
         std::cerr << "Invalid error while initialising settings group '" << key << "': " << unexpectedError
-                  << ". Settings will return to default";
+                  << ". Settings will return to default" << std::endl;
       } catch (std::exception const&) {
-        std::cerr << "Failed to open file for settings group '" << key << "'. Settings will return to default";
+        std::cerr << "Failed to open file for settings group '" << key << "'. Settings will return to default"
+                  << std::endl;
       }
     }
 
@@ -192,7 +203,7 @@ auto recursiveLoad(Map<String, JsonElement>& map, Path const& path) noexcept -> 
       } catch (cds::Exception const& typeException) {
         std::cerr << "Settings group directory found for key '" << directory
                   << "', but already in use in primary json by a different data-type: " << typeException
-                  << ". This will not be overwritten.";
+                  << ". This will not be overwritten." << std::endl;
       }
     }
   }
@@ -204,18 +215,16 @@ auto loaderFn(JsonObject* main, JsonObject* copy) noexcept {
     *main = loadJson(Registry::rootFileName);
     recursiveLoad(*main, configPath);
   } catch (cds::Exception const& unexpectedError) {
-    std::cerr << "Invalid error while initialising settings: " << unexpectedError
-              << ". Settings will return to default";
+    std::cerr << "Invalid error while initialising settings: " << unexpectedError << ". Settings will return to default"
+              << std::endl;
   } catch (std::exception const&) {
-    std::cerr << "Root config not found. Settings will return to default";
+    std::cerr << "Root config not found. Settings will return to default" << std::endl;
   }
 
   *copy = *main;
 }
 
 auto saveUnderlying(Path const& path, String const& key, JsonObject const& json) -> void {
-  std::cout << "  Indirectly saving: " << path / (key + ".json") << std::endl;
-
   for (auto const& entry : json) {
     if (entry.value().isJson()) {
       saveUnderlying(path / key, entry.key(), entry.value().getJson());
@@ -227,8 +236,6 @@ auto saveUnderlying(Path const& path, String const& key, JsonObject const& json)
 }
 
 auto saverFn(Path const& path, JsonObject const* json) {
-  std::cout << "Started save of: " << path.toString() << std::endl;
-
   for (auto const& entry : *json) {
     if (entry.value().isJson()) {
       saveUnderlying(path.parent(), entry.key(), entry.value().getJson());
