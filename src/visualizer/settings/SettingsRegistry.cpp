@@ -60,7 +60,7 @@ auto filteredDump(auto& out, JsonElement const& object, int currentIndent, int i
   }
 
   if (object.isDouble()) {
-    out << object.getDouble();
+    out << std::showpoint << object.getDouble();
   }
 }
 
@@ -103,7 +103,7 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
 
   auto it = object.begin();
   addIndent(out, nextIndent);
-  out << '\"' << it->key() << "\" : \"";
+  out << '\"' << it->key() << "\" : ";
   filteredDump(out, it->value(), nextIndent, indent);
   ++it;
 
@@ -115,11 +115,11 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
     out << ",\n";
 
     addIndent(out, nextIndent);
-    out << '\"' << it->key() << "\" : \"";
+    out << '\"' << it->key() << "\" : ";
     filteredDump(out, it->value(), nextIndent, indent);
   }
 
-  out << "}";
+  out << "\n}";
 }
 
 auto filteredDump(auto& out, JsonObject const& object, int indent = 2) -> void { filteredDump(out, object, 0, indent); }
@@ -267,7 +267,12 @@ auto Registry::save(StringRef key) noexcept(false) -> void {
       subKey = sub(key);
     }
     replaceIfMissing(lJson, subKey);
-    lJson->get(subKey) = rJson->get(subKey);
+    auto& lSub = lJson->get(subKey);
+    auto const& rSub = rJson->get(subKey);
+    lSub = rSub;
+    if (lSub.isJson()) {
+      lJson = &lSub.getJson();
+    }
   } else {
     *lJson = *rJson;
   }
@@ -290,7 +295,7 @@ auto Registry::getArray(StringRef key) const noexcept(false) -> JsonArray const&
 }
 
 Registry::~Registry() noexcept {
-  //  std::cout << dump(registry()._stored) << '\n';
+  std::cout << dump(registry()._stored) << '\n';
   _saver->await();
   _loader->await();
 }
