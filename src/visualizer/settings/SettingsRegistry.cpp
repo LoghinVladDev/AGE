@@ -290,7 +290,13 @@ auto Registry::getArray(StringRef key) const noexcept(false) -> JsonArray const&
 }
 
 Registry::~Registry() noexcept {
-  std::cout << dump(registry()._stored) << '\n';
+  //  std::cout << dump(registry()._stored) << '\n';
   _saver->await();
   _loader->await();
+}
+
+auto Registry::awaitPending() noexcept -> void {
+  auto& r = registry();
+  r._saver->await();
+  r._loader->await();
 }
