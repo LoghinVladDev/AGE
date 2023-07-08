@@ -164,7 +164,7 @@ auto convertToPath(StringRef key) noexcept -> String {
   return path + ".json";
 }
 
-auto recursiveLoad(Map<String, JsonElement>& map, Path const& path) -> void {
+auto recursiveLoad(Map<String, JsonElement>& map, Path const& path) noexcept -> void {
   for (auto const& entry : path.walk(1u)) {
     for (auto const& file : entry.files()) {
       if (!file.endsWith(".json")) {
@@ -181,7 +181,7 @@ auto recursiveLoad(Map<String, JsonElement>& map, Path const& path) -> void {
       } catch (cds::Exception const& unexpectedError) {
         std::cerr << "Invalid error while initialising settings group '" << key << "': " << unexpectedError
                   << ". Settings will return to default";
-      } catch (std::exception const& fileNotFound) {
+      } catch (std::exception const&) {
         std::cerr << "Failed to open file for settings group '" << key << "'. Settings will return to default";
       }
     }
@@ -198,7 +198,7 @@ auto recursiveLoad(Map<String, JsonElement>& map, Path const& path) -> void {
   }
 }
 
-auto loaderFn(JsonObject* main, JsonObject* copy) {
+auto loaderFn(JsonObject* main, JsonObject* copy) noexcept {
   auto configPath = Path(Registry::defaultPath);
   try {
     *main = loadJson(Registry::rootFileName);
@@ -206,7 +206,7 @@ auto loaderFn(JsonObject* main, JsonObject* copy) {
   } catch (cds::Exception const& unexpectedError) {
     std::cerr << "Invalid error while initialising settings: " << unexpectedError
               << ". Settings will return to default";
-  } catch (std::exception const& fileNotFound) {
+  } catch (std::exception const&) {
     std::cerr << "Root config not found. Settings will return to default";
   }
 
@@ -238,8 +238,6 @@ auto saverFn(Path const& path, JsonObject const* json) {
   PathAwareOfstream outFile(path.toString());
   filteredDump(outFile, *json);
 }
-
-UniquePointer<Registry> _registry = nullptr;
 } // namespace
 
 auto Registry::sub(StringRef& key) noexcept -> StringRef { return ::sub(key); }

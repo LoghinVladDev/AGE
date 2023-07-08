@@ -59,6 +59,7 @@ private:
   cds::UniquePointer<AsyncRunner<void, cds::json::JsonObject*, cds::json::JsonObject*>> const _loader;
   cds::UniquePointer<AsyncRunner<void, cds::filesystem::Path, cds::json::JsonObject const*>> const _saver;
   static constexpr cds::StringView const pathInternalPrefix = "__resourcepath__";
+  static inline cds::UniquePointer<Registry> _registry = nullptr;
 };
 
 inline auto registry() noexcept(false) -> Registry& { return Registry::active(); }
