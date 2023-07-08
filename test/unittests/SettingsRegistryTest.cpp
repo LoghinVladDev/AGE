@@ -6,6 +6,8 @@
 #include <gtest/gtest.h>
 #include <visualizer/settings/SettingsRegistry.hpp>
 
+#include <CDS/filesystem/Path>
+
 namespace {
 using age::visualizer::settings::registry;
 using namespace cds::json;
@@ -130,6 +132,7 @@ TEST(SettingsRegistryTest, checkSavedConfigs) {
   ASSERT_TRUE(std::filesystem::exists("./config"));
   ASSERT_TRUE(std::filesystem::exists("./config/save2_json"));
   ASSERT_TRUE(std::filesystem::exists("./config/save2_json/save3_json"));
+  ASSERT_TRUE(std::filesystem::exists("./config/save2_json/save3_json"));
 
   ASSERT_TRUE(std::filesystem::is_directory("./config"));
   ASSERT_TRUE(std::filesystem::is_directory("./config/save2_json"));
@@ -144,6 +147,42 @@ TEST(SettingsRegistryTest, checkSavedConfigs) {
   ASSERT_TRUE(std::filesystem::is_regular_file("./config/testJson.json"));
 
   ASSERT_TRUE(std::filesystem::exists("./config/save2_json/save3_json.json"));
+  ASSERT_TRUE(std::filesystem::is_regular_file("./config/save2_json/save3_json.json"));
+
+  ASSERT_TRUE(std::filesystem::exists("./config/save2_json/save3_json/save4_json.json"));
+  ASSERT_TRUE(std::filesystem::is_regular_file("./config/save2_json/save3_json/save4_json.json"));
+
+  ASSERT_FALSE(std::filesystem::exists("./config/save2_json.json"));
+
+  auto registryBase = cds::json::loadJson("./config/registryBase.json");
+  auto testJson = cds::json::loadJson("./config/testJson.json");
+  auto save1_json = cds::json::loadJson("./config/save1_json.json");
+  auto save3_json = cds::json::loadJson("./config/save2_json/save3_json.json");
+  auto save4_json = cds::json::loadJson("./config/save2_json/save3_json/save4_json.json");
+
+  ASSERT_EQ(registryBase.keys().size(), 6u);
+  ASSERT_TRUE(registryBase.keys().containsAllOf(
+      {"testStr", "testInt", "testFloat", "testBool", "testArray", "save2_testStr1"}));
+  ASSERT_EQ(registryBase.getString("testStr"), "test2");
+  ASSERT_EQ(registryBase.getInt("testInt"), 0);
+  ASSERT_EQ(registryBase.getFloat("testFloat"), 0.0f);
+  ASSERT_EQ(registryBase.getBoolean("testBool"), false);
+  ASSERT_TRUE(registryBase.getArray("testArray").empty());
+  ASSERT_EQ(registryBase.getString("save2_testStr1"), "test1");
+
+  ASSERT_TRUE(save1_json.empty());
+
+  ASSERT_EQ(testJson.keys().size(), 3u);
+  ASSERT_TRUE(testJson.keys().containsAllOf({"testStr", "save1_testStr2", "save2_testStr2"}));
+  ASSERT_EQ(testJson.getString("testStr"), "test4");
+  ASSERT_EQ(testJson.getString("save1_testStr2"), "test3");
+  ASSERT_EQ(testJson.getString("save2_testStr2"), "test3");
+
+  ASSERT_EQ(save3_json.keys().size(), 1u);
+  ASSERT_TRUE(save3_json.keys().containsAllOf({"save3_json"}));
+  ASSERT_EQ(save3_json.getString("save3_json"), "");
+
+  ASSERT_TRUE(save4_json.empty());
 }
 
 TEST(SettingsRegistryTest, removeTestConfigs) {
