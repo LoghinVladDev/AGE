@@ -126,6 +126,7 @@ TEST(SettingsRegistryTest, savePath) {
 }
 
 TEST(SettingsRegistryTest, checkSavedConfigs) {
+  age::visualizer::settings::Registry::awaitPending();
   ASSERT_TRUE(std::filesystem::exists("./config"));
   ASSERT_TRUE(std::filesystem::exists("./config/save2_json"));
   ASSERT_TRUE(std::filesystem::exists("./config/save2_json/save3_json"));
