@@ -16,7 +16,7 @@ namespace age::visualizer::settings {
 class Registry {
 public:
   static inline auto triggerLoad() noexcept(false) -> void { (void) active(); }
-  static inline auto awaitPending() noexcept -> void;
+  static auto awaitPending() noexcept -> void;
   static auto active() noexcept(false) -> Registry&;
   auto reset(StringRef key = "") noexcept(false) -> void;
   auto save(StringRef key = "") noexcept(false) -> void;
