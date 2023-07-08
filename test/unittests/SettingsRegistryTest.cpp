@@ -13,9 +13,35 @@ using age::visualizer::settings::registry;
 using namespace cds::json;
 } // namespace
 
-TEST(SettingsRegistryTest, storeExistingConfig) {}
+TEST(SettingsRegistryTest, storeExistingConfig) {
+  std::filesystem::remove_all("./.config_backup");
+  if (std::filesystem::exists("./config")) {
+    std::filesystem::copy("./config", "./.config_backup",
+                          std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+    std::filesystem::remove_all("./config");
+  }
+}
 
-TEST(SettingsRegistryTest, prepareTestConfig) {}
+TEST(SettingsRegistryTest, prepareTestConfig) {
+  std::filesystem::create_directory("./config");
+  std::ofstream registryBase("./config/registryBase.json");
+  registryBase <<
+      R"({
+  "testStr" : "test",
+  "testInt" : 0,
+  "testFloat" : 0.0,
+  "testBool" : false,
+  "testArray" : []
+})";
+  std::ofstream testJson("./config/testJson.json");
+  testJson <<
+      R"({
+  "testStr" : "testSub"
+})";
+
+  registryBase.close();
+  testJson.close();
+}
 
 TEST(SettingsRegistryTest, preemptiveLoad) {
   auto& r = registry();
@@ -185,6 +211,10 @@ TEST(SettingsRegistryTest, checkSavedConfigs) {
   ASSERT_TRUE(save4_json.empty());
 }
 
-TEST(SettingsRegistryTest, removeTestConfigs) {
-  //  std::filesystem::remove_all("./config");
+TEST(SettingsRegistryTest, restoreBackup) {
+  std::filesystem::remove_all("./config");
+  if (std::filesystem::exists("./.config_backup")) {
+    std::filesystem::copy("./.config_backup", "./config", std::filesystem::copy_options::recursive);
+    std::filesystem::remove_all("./.config_backup");
+  }
 }

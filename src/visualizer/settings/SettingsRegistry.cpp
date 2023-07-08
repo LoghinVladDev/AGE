@@ -164,16 +164,52 @@ auto convertToPath(StringRef key) noexcept -> String {
   return path + ".json";
 }
 
-UniquePointer<Registry> _registry = nullptr;
-} // namespace
+auto recursiveLoad(Map<String, JsonElement>& map, Path const& path) -> void {
+  for (auto const& entry : path.walk(1u)) {
+    for (auto const& file : entry.files()) {
+      if (!file.endsWith(".json")) {
+        continue;
+      }
+
+      if ((path / file).toString() == Registry::rootFileName) {
+        continue;
+      }
+
+      StringView key {file.cStr(), file.length() - 5u};
+      try {
+        map.emplace(key, loadJson(path / file));
+      } catch (cds::Exception const& unexpectedError) {
+        std::cerr << "Invalid error while initialising settings group '" << key << "': " << unexpectedError
+                  << ". Settings will return to default";
+      } catch (std::exception const& fileNotFound) {
+        std::cerr << "Failed to open file for settings group '" << key << "'. Settings will return to default";
+      }
+    }
+
+    for (auto const& directory : entry.directories()) {
+      try {
+        recursiveLoad(map.emplace(directory, JsonObject()).value().getJson(), path / directory);
+      } catch (cds::Exception const& typeException) {
+        std::cerr << "Settings group directory found for key '" << directory
+                  << "', but already in use in primary json by a different data-type: " << typeException
+                  << ". This will not be overwritten.";
+      }
+    }
+  }
+}
 
 auto loaderFn(JsonObject* main, JsonObject* copy) {
-  main->put("testStr", "test");
-  main->put("testInt", 0);
-  main->put("testFloat", 0.0f);
-  main->put("testBool", false);
-  main->put("testArray", JsonArray());
-  main->put("testJson", JsonObject().put("testStr", "testSub"));
+  auto configPath = Path(Registry::defaultPath);
+  try {
+    *main = loadJson(Registry::rootFileName);
+    recursiveLoad(*main, configPath);
+  } catch (cds::Exception const& unexpectedError) {
+    std::cerr << "Invalid error while initialising settings: " << unexpectedError
+              << ". Settings will return to default";
+  } catch (std::exception const& fileNotFound) {
+    std::cerr << "Root config not found. Settings will return to default";
+  }
+
   *copy = *main;
 }
 
@@ -202,6 +238,9 @@ auto saverFn(Path const& path, JsonObject const* json) {
   PathAwareOfstream outFile(path.toString());
   filteredDump(outFile, *json);
 }
+
+UniquePointer<Registry> _registry = nullptr;
+} // namespace
 
 auto Registry::sub(StringRef& key) noexcept -> StringRef { return ::sub(key); }
 
