@@ -21,6 +21,8 @@ public:
     static_cast<Base*>(this)->handle() << std::forward<T>(object);
     return *this;
   }
+
+  [[nodiscard]] auto rdbuf() { return static_cast<Base*>(this)->handle().rdbuf(); }
 };
 
 template <typename Base> class OfstreamFunctions {
@@ -34,7 +36,8 @@ public:
 };
 
 template <typename Base> class FstreamFunctions {
-  // To be filled later with common functions where needed.
+public:
+  auto close() { static_cast<Base*>(this)->handle().close(); }
 };
 } // namespace meta
 

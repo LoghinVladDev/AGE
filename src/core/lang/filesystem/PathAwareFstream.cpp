@@ -16,6 +16,9 @@ using std::filesystem::create_directories;
 
 namespace age::meta {
 PathAwareDirectoryCreator::PathAwareDirectoryCreator(StringView path) noexcept(false) {
-  create_directories(string_view(path.cStr(), path.findLast(directorySeparator)));
+  auto separatorPos = path.findLast(directorySeparator);
+  if (separatorPos != StringView::invalidIndex) {
+    create_directories(string_view(path.cStr(), path.findLast(directorySeparator)));
+  }
 }
 } // namespace age::meta
