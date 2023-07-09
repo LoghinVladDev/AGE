@@ -35,7 +35,6 @@ public:
     }
 
     auto operator*() -> meta::MovableIterableReturn<T>::Type {
-      _generator.acquire();
       _generator._acquired = false;
       return _generator._handle.promise()._value;
     }
