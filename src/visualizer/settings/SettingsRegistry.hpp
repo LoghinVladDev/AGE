@@ -10,18 +10,20 @@
 #include <CDS/util/JSON>
 
 #include <lang/string/StringRef.hpp>
+#include <lang/thread/AsyncRunner.hpp>
 
 namespace age::visualizer::settings {
 class Registry {
 public:
+  static inline auto triggerLoad() noexcept(false) -> void { (void) active(); }
+  static auto awaitPending() noexcept -> void;
   static auto active() noexcept(false) -> Registry&;
-  static auto triggerLoad() noexcept(false) -> void;
-  static auto reset(StringRef key = "") noexcept(false) -> void;
-  static auto save(StringRef key = "") noexcept(false) -> void;
+  auto reset(StringRef key = "") noexcept(false) -> void;
+  auto save(StringRef key = "") noexcept(false) -> void;
 
 private:
   class Token {
-    friend auto ::age::visualizer::settings::Registry::triggerLoad() noexcept(false) -> void;
+    friend auto ::age::visualizer::settings::Registry::active() noexcept(false) -> Registry&;
     Token() = default;
   };
 
@@ -40,23 +42,30 @@ public:
   template <typename Type> auto put(StringRef key, Type&& value) noexcept(false) -> Registry&;
   template <typename Type> auto replace(StringRef key, Type&& value) noexcept(false) -> Registry&;
 
-  explicit(false) Registry(Token) noexcept {}
+  explicit(false) Registry(Token) noexcept;
+  ~Registry() noexcept;
+
+  static constexpr auto const defaultPath = "./config";
+  static constexpr auto const rootFileName = "./config/registryBase.json";
 
 private:
   static auto sub(StringRef& key) noexcept -> StringRef;
   static auto replaceIfMissing(cds::json::JsonObject* pJson, StringRef key, bool overwriteType = false) noexcept
       -> void;
 
-  cds::json::JsonObject _contents;
-
-  static inline cds::UniquePointer<Registry> _active;
-  static inline cds::UniquePointer<Registry> _stored;
-  static constexpr auto const defaultPath = "./registryBase.json";
+  bool _loaded = false;
+  cds::json::JsonObject _active;
+  cds::json::JsonObject _stored;
+  cds::UniquePointer<AsyncRunner<void, cds::json::JsonObject*, cds::json::JsonObject*>> const _loader;
+  cds::UniquePointer<AsyncRunner<void, cds::filesystem::Path, cds::json::JsonObject const*>> const _saver;
   static constexpr cds::StringView const pathInternalPrefix = "__resourcepath__";
+  static inline cds::UniquePointer<Registry> _registry = nullptr;
 };
 
+inline auto registry() noexcept(false) -> Registry& { return Registry::active(); }
+
 template <typename Type> auto Registry::put(StringRef key, Type&& value) noexcept(false) -> Registry& {
-  auto current = &_contents;
+  auto current = &_active;
   auto subKey = sub(key);
   while (key) {
     replaceIfMissing(current, subKey);
@@ -68,7 +77,7 @@ template <typename Type> auto Registry::put(StringRef key, Type&& value) noexcep
 }
 
 template <typename Type> auto Registry::replace(StringRef key, Type&& value) noexcept(false) -> Registry& {
-  auto current = &_contents;
+  auto current = &_active;
   auto subKey = sub(key);
   while (key) {
     replaceIfMissing(current, subKey);

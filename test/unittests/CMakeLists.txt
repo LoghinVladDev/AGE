@@ -25,9 +25,12 @@ set(
 
 set(
     UNIT_TEST_SOURCES
+    AsyncRunnerTest.cpp
     DummyTest.cpp
-    UnitTestsMain.cpp
+    GeneratorTest.cpp
+    PathAwareFstreamTest.cpp
     StringRefTest.cpp
+    UnitTestsMain.cpp
 )
 
 set(QT_MOCK_INCLUDE)
