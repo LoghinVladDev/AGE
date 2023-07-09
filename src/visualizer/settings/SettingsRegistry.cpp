@@ -145,17 +145,6 @@ auto sub(StringRef& key) noexcept -> StringRef {
   return rVal;
 }
 
-auto get(auto& json, StringRef key) noexcept(false) -> auto& {
-  auto current = &json;
-  auto subKey = sub(key);
-  while (key) {
-    current = &current->getJson(subKey);
-    subKey = sub(key);
-  }
-
-  return current->get(subKey);
-}
-
 auto convertToPath(StringRef key) noexcept -> String {
   String path = Registry::defaultPath;
   path += directorySeparator;
@@ -175,7 +164,7 @@ auto convertToPath(StringRef key) noexcept -> String {
 }
 
 auto recursiveLoad(Map<String, JsonElement>& map, Path const& path) noexcept -> void {
-  for (auto const& entry : path.walk(1u)) {
+  for (auto const& entry : path.walk(0u)) {
     for (auto const& file : entry.files()) {
       if (!file.endsWith(".json")) {
         continue;
@@ -222,9 +211,13 @@ auto loaderFn(JsonObject* main, JsonObject* copy) noexcept {
   }
 
   *copy = *main;
+  std::cout << "Loaded config:\n" << dump(*main, 2u) << "\n";
 }
 
 auto saveUnderlying(Path const& path, String const& key, JsonObject const& json) -> void {
+  std::cout << "Saved underlying config json '" << path.toString() + "/" + key + ".json"
+            << "':\n"
+            << dump(json, 2u) << "\n";
   for (auto const& entry : json) {
     if (entry.value().isJson()) {
       saveUnderlying(path / key, entry.key(), entry.value().getJson());
@@ -236,9 +229,17 @@ auto saveUnderlying(Path const& path, String const& key, JsonObject const& json)
 }
 
 auto saverFn(Path const& path, JsonObject const* json) {
+  auto targetPath = path.parent() / path.node().toString().removeSuffix(".json");
+  if (path.toString() == Registry::rootFileName) {
+    targetPath = path.parent();
+  }
+
+  std::cout << "Saved config json '" << targetPath.toString() + ".json"
+            << "':\n"
+            << dump(*json, 2u) << "\n";
   for (auto const& entry : *json) {
     if (entry.value().isJson()) {
-      saveUnderlying(path.parent(), entry.key(), entry.value().getJson());
+      saveUnderlying(targetPath, entry.key(), entry.value().getJson());
     }
   }
 
@@ -287,35 +288,54 @@ auto Registry::reset(StringRef key) noexcept(false) -> void {
   lJson->get(subKey) = rJson->get(subKey);
 }
 
-auto Registry::replaceIfMissing(JsonObject* pJson, StringRef key, bool overwriteType) noexcept -> void {
+auto Registry::replaceIfMissing(JsonObject* pJson, StringRef key, bool overwriteType) noexcept -> bool {
   if (auto jsonIt = pJson->find(key); jsonIt == pJson->end()) {
     pJson->put(key, JsonObject());
+    return true;
   } else if (overwriteType || !jsonIt->value().isJson()) {
     jsonIt->value() = JsonObject();
+    return true;
   }
+  return false;
 }
 
 auto Registry::save(StringRef key) noexcept(false) -> void {
   _saver->await();
   auto lJson = &_stored;
   auto rJson = &_active;
+  auto overwrittenSaveRoot = false;
   String savePath = key ? convertToPath(key) : rootFileName;
 
   if (key) {
     auto subKey = sub(key);
     while (key) {
-      replaceIfMissing(lJson, subKey, true);
+      if (replaceIfMissing(lJson, subKey, true)) {
+        overwrittenSaveRoot = true;
+        savePath = convertToPath(key);
+        break;
+      }
 
       lJson = &lJson->getJson(subKey);
       rJson = &rJson->getJson(subKey);
       subKey = sub(key);
     }
-    replaceIfMissing(lJson, subKey);
-    auto& lSub = lJson->get(subKey);
-    auto const& rSub = rJson->get(subKey);
-    lSub = rSub;
-    if (lSub.isJson()) {
-      lJson = &lSub.getJson();
+
+    overwrittenSaveRoot = replaceIfMissing(lJson, subKey);
+    if (!overwrittenSaveRoot) {
+      auto& lSub = lJson->get(subKey);
+      auto const& rSub = rJson->get(subKey);
+      bool saveUnderlying = false;
+      if (lSub.isJson()) {
+        saveUnderlying = true;
+      }
+
+      lSub = rSub;
+      if (saveUnderlying) {
+        lJson = &lSub.getJson();
+      }
+    } else {
+      savePath = rootFileName;
+      *lJson = *rJson;
     }
   } else {
     *lJson = *rJson;
@@ -347,4 +367,54 @@ auto Registry::awaitPending() noexcept -> void {
   auto& r = registry();
   r._saver->await();
   r._loader->await();
+}
+
+auto Registry::getIntOr(StringRef key, int value) noexcept(false) -> int {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getInt();
+  } catch (cds::KeyException const&) {
+    put(key, value);
+    return get(_active, key).getInt();
+  }
+}
+
+auto Registry::getLongOr(StringRef key, long value) noexcept(false) -> long {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getLong();
+  } catch (cds::KeyException const&) {
+    put(key, static_cast<long long>(value));
+    return get(_active, key).getLong();
+  }
+}
+
+auto Registry::getFloatOr(StringRef key, float value) noexcept(false) -> float {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getFloat();
+  } catch (cds::KeyException const&) {
+    put(key, value);
+    return get(_active, key).getFloat();
+  }
+}
+
+auto Registry::getDoubleOr(StringRef key, double value) noexcept(false) -> double {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getDouble();
+  } catch (cds::KeyException const&) {
+    put(key, value);
+    return get(_active, key).getDouble();
+  }
+}
+
+auto Registry::getBooleanOr(StringRef key, bool value) noexcept(false) -> bool {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getBoolean();
+  } catch (cds::KeyException const&) {
+    put(key, value);
+    return get(_active, key).getBoolean();
+  }
 }

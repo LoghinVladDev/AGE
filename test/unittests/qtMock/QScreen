@@ -1,0 +1,11 @@
+//
+// Created by Vlad-Andrei Loghin on 10.07.23.
+//
+
+#pragma once
+
+#include <QSize>
+
+struct QScreen {
+  auto availableSize() -> QSize { return {1920, 1080}; }
+};

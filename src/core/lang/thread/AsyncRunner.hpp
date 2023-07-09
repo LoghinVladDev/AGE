@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 06.07.23.
 //
 
-#ifndef AGE_ASYNC_RUNNER_HPP
-#define AGE_ASYNC_RUNNER_HPP
-
+#pragma once
 #include <CDS/Function>
 #include <CDS/memory/UniquePointer>
 #include <CDS/meta/Base>
@@ -128,5 +126,3 @@ auto AsyncRunner<Result, Args...>::trigger(A&&... args) noexcept(false) {
   condition.notify_one();
 }
 } // namespace age
-
-#endif // AGE_ASYNC_RUNNER_HPP

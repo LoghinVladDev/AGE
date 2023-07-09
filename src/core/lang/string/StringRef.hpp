@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 20.06.23.
 //
 
-#ifndef AGE_STRING_REF_HPP
-#define AGE_STRING_REF_HPP
-
+#pragma once
 #include <CDS/Object>
 #include <string>
 
@@ -74,5 +72,3 @@ private:
   using Utils = cds::StringUtils<char>;
 };
 } // namespace age
-
-#endif // AGE_STRING_REF_HPP

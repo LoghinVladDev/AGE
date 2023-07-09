@@ -2,8 +2,7 @@
 // Created by Vlad-Andrei Loghin on 01.07.23.
 //
 
-#ifndef AGE_OPERATORS_WITH_IMPLICIT_CONSTRUCTIONS_HPP
-#define AGE_OPERATORS_WITH_IMPLICIT_CONSTRUCTIONS_HPP
+#pragma once
 
 namespace age::meta::op {
 template <typename L, typename R, typename = void> struct AmbiguousAdd : cds::meta::FalseType {};
@@ -78,5 +77,3 @@ public:
   }
 };
 } // namespace age::meta::op
-
-#endif // AGE_OPERATORS_WITH_IMPLICIT_CONSTRUCTIONS_HPP

@@ -2,10 +2,10 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_MOCK_QAPPLICATION
-#define AGE_MOCK_QAPPLICATION
+#pragma once
 
 #include <QCommon>
+#include <QScreen>
 
 struct QApplication {
   explicit QApplication(int&, char** = nullptr) noexcept {}
@@ -13,6 +13,8 @@ struct QApplication {
   static auto exec() noexcept -> int {
     return 0;
   }
-};
 
-#endif // AGE_MOCK_QAPPLICATION
+  static auto primaryScreen() -> QScreen* { return &_primary; }
+
+  static inline QScreen _primary;
+};

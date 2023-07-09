@@ -193,6 +193,15 @@ TEST(SettingsRegistryTest, extrasForCoverage) {
   r.put("testArray_filtered3", JsonArray().pushBack("testStr1").pushBack(JsonObject()));
   r.put("testArray_filtered4", JsonArray().pushBack("testStr1").pushBack(JsonObject()).pushBack("testStr2"));
   r.put("testBoolTrue", true);
+
+  (void) r.getIntOr("testIntOr", 2);
+  (void) r.getLongOr("testLongOr", 4l);
+  (void) r.getFloatOr("testFloatOr", 0.4f);
+  (void) r.getDoubleOr("testDoubleOr", 0.8);
+  (void) r.getBooleanOr("testBoolOr", false);
+  (void) r.getStringOr("testStrOr", "testEmpty");
+  (void) r.getArrayOr("testArrayOr", JsonArray().pushBack(3).pushBack(0.4));
+  (void) r.getJsonOr("testJsonOr", JsonObject().put("test", "test").put("test2", 2));
   r.save();
 }
 
@@ -231,7 +240,7 @@ TEST(SettingsRegistryTest, checkSavedConfigs) {
   auto save3_json = cds::json::loadJson("./config/save2_json/save3_json.json");
   auto save4_json = cds::json::loadJson("./config/save2_json/save3_json/save4_json.json");
 
-  ASSERT_EQ(registryBase.keys().size(), 11u);
+  ASSERT_EQ(registryBase.keys().size(), 18u);
   ASSERT_TRUE(registryBase.keys().containsAllOf(
       {"testStr", "testInt", "testFloat", "testBool", "testArray", "save2_testStr1"}));
   ASSERT_EQ(registryBase.getString("testStr"), "test2");
@@ -258,6 +267,16 @@ TEST(SettingsRegistryTest, checkSavedConfigs) {
   ASSERT_EQ(registryBase.getArray("testArray_filtered4")[2].getString(), "testStr2");
 
   ASSERT_EQ(registryBase.getBoolean("testBoolTrue"), true);
+
+  ASSERT_EQ(registryBase.getInt("testIntOr"), 2);
+  ASSERT_EQ(registryBase.getLong("testLongOr"), 4l);
+  ASSERT_EQ(registryBase.getFloat("testFloatOr"), 0.4f);
+  ASSERT_EQ(registryBase.getDouble("testDoubleOr"), 0.8);
+  ASSERT_EQ(registryBase.getBoolean("testBoolOr"), false);
+  ASSERT_EQ(registryBase.getString("testStrOr"), "testEmpty");
+  ASSERT_EQ(registryBase.getArray("testArrayOr").size(), 2u);
+  ASSERT_EQ(registryBase.getArray("testArrayOr").getInt(0), 3);
+  ASSERT_EQ(registryBase.getArray("testArrayOr").getFloat(1), 0.4f);
 
   ASSERT_TRUE(save1_json.empty());
 

@@ -2,9 +2,6 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_MOCK_QCOMMON
-#define AGE_MOCK_QCOMMON
+#pragma once
 
 #define Q_OBJECT
-
-#endif // AGE_MOCK_QCOMMON
