@@ -2,6 +2,7 @@
 // Created by Vlad-Andrei Loghin on 09.07.23.
 //
 
+#include <filesystem>
 #include <gtest/gtest.h>
 #include <lang/filesystem/PathAwareFstream.hpp>
 
