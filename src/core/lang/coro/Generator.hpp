@@ -30,14 +30,12 @@ public:
   public:
     explicit Iterator(Generator<T>&& generator) noexcept : _generator(std::move(generator)) {}
     auto operator++() -> Iterator& {
+      _generator._acquired = false;
       _generator.acquire();
       return *this;
     }
 
-    auto operator*() -> meta::MovableIterableReturn<T>::Type {
-      _generator._acquired = false;
-      return _generator._handle.promise()._value;
-    }
+    auto operator*() -> meta::MovableIterableReturn<T>::Type { return _generator._handle.promise()._value; }
 
     auto operator!=(DefaultSentinel) -> bool { return !_generator.empty(); }
 
