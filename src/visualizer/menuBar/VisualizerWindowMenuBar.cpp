@@ -19,7 +19,7 @@ auto separatorGeneratorFormula() -> Generator<String> {
   String base = "__separator_";
   int index = 0;
   while (true) {
-    co_yield base + (index) + "__";
+    co_yield base + index + "__";
     ++index;
   }
 }
@@ -41,11 +41,14 @@ auto const defaultConfig = JsonObject()
                                         .put("Find Action...", actionId(ActionBinding::AB_findAction))
                                         .put("About...", actionId(ActionBinding::AB_about)));
 
-auto loadByUnderlying(auto* parent, auto const& name, JsonObject const& data) {
+auto loadByUnderlying(auto const* parent, auto const& name, JsonObject const& data) {
   // empty for now
+  (void) parent;
+  (void) name;
+  (void) data;
 }
 
-auto loadByUnderlying(auto* parent, auto const& name, auto const& data) {
+auto loadByUnderlying(auto const* parent, auto const& name, auto const& data) {
   if (data.isJson()) {
     return loadByUnderlying(parent, name, data.getJson());
   }

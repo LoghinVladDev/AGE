@@ -311,7 +311,6 @@ auto Registry::save(StringRef key) noexcept(false) -> void {
     auto subKey = sub(key);
     while (key) {
       if (replaceIfMissing(lJson, subKey, true)) {
-        overwrittenSaveRoot = true;
         savePath = convertToPath(key);
         break;
       }
