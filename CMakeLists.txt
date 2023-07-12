@@ -59,6 +59,7 @@ if(DEFINED QT_VERSION)
   set(
       VISUALIZER_SOURCES
       ${CMAKE_SOURCE_DIR}/src/visualizer/window/VisualizerWindow.cpp
+      ${CMAKE_SOURCE_DIR}/src/visualizer/menuBar/VisualizerWindowMenuBar.cpp
   )
 
   add_library(

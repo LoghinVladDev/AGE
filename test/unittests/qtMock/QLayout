@@ -6,8 +6,10 @@
 
 #include <QCommon>
 
+struct QMenuBar;
 struct QWidget;
 struct QLayout {
-  explicit QLayout(QWidget*) noexcept {}
+  explicit QLayout(QWidget* = nullptr) noexcept {}
   virtual ~QLayout() noexcept = default;
+  auto setMenuBar(QWidget*) noexcept -> void {}
 };

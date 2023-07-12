@@ -293,8 +293,9 @@ auto Registry::replaceIfMissing(JsonObject* pJson, StringRef key, bool overwrite
     pJson->put(key, JsonObject());
     return true;
   } else if (overwriteType || !jsonIt->value().isJson()) {
+    auto overwritten = !jsonIt->value().isJson();
     jsonIt->value() = JsonObject();
-    return true;
+    return overwritten;
   }
   return false;
 }

@@ -4,13 +4,16 @@
 
 #include <QApplication>
 #include <QScreen>
+#include <menuBar/VisualizerWindowMenuBar.hpp>
 #include <settings/SettingsRegistry.hpp>
 #include <window/VisualizerWindow.hpp>
 
 namespace {
 using age::visualizer::VisualizerWindow;
+using age::visualizer::VisualizerWindowMenuBar;
 using age::visualizer::settings::Registry;
 using age::visualizer::settings::registry;
+using cds::UniquePointer;
 
 auto startingGeometry() {
   auto screenSize = QApplication::primaryScreen()->availableSize();
@@ -27,14 +30,19 @@ auto saveSession() { registry().save("session"); }
 
 class WindowWrapper : public VisualizerWindow {
 public:
-  using VisualizerWindow::VisualizerWindow;
+  WindowWrapper() : VisualizerWindow() { layout()->setMenuBar(_menuBar); }
+
   auto closeEvent(QCloseEvent* event) -> void override {
+    QWidget::closeEvent(event);
     registry().replace("session.baseWindow.x", pos().x());
     registry().replace("session.baseWindow.y", pos().y());
     registry().replace("session.baseWindow.width", size().width());
     registry().replace("session.baseWindow.height", size().height());
     saveSession();
   }
+
+private:
+  UniquePointer<QWidget> _menuBar {cds::makeUnique<VisualizerWindowMenuBar>(this)};
 };
 } // namespace
 

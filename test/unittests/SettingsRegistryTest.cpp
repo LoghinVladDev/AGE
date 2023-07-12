@@ -184,6 +184,8 @@ TEST(SettingsRegistryTest, savePath) {
   r.save("save2_json.save3_json.save4_json");
   r.reset();
   ASSERT_TRUE(r.getJson("save2_json.save3_json.save4_json").empty());
+
+  r.save("save2_json.save3_json.save4_json");
 }
 
 TEST(SettingsRegistryTest, extrasForCoverage) {
