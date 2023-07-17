@@ -40,7 +40,7 @@ public:
     return operator=(StringRef(string));
   }
 
-  [[nodiscard]] explicit(false) operator bool() const noexcept;
+  [[nodiscard]] explicit operator bool() const noexcept;
   [[nodiscard]] explicit(false) operator cds::StringView() const noexcept;
   [[nodiscard]] explicit(false) operator cds::String() const noexcept;
 
@@ -63,6 +63,11 @@ public:
   [[nodiscard]] constexpr auto data() const noexcept { return _buffer; }
   [[nodiscard]] constexpr auto size() const noexcept { return _size; }
   [[nodiscard]] constexpr auto empty() const noexcept -> bool { return data() == nullptr || size() == 0u; }
+
+  [[nodiscard]] auto startsWith(char character) const noexcept -> bool;
+  [[nodiscard]] auto startsWith(StringRef sequence) const noexcept -> bool;
+  [[nodiscard]] auto endsWith(char character) const noexcept -> bool;
+  [[nodiscard]] auto endsWith(StringRef sequence) const noexcept -> bool;
 
   static constexpr cds::Index const npos = cds::String::invalidIndex;
 

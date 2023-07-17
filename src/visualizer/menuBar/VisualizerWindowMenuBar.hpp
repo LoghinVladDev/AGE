@@ -6,10 +6,16 @@
 
 #include <QMenuBar>
 
+#include <CDS/Array>
+#include <CDS/memory/UniquePointer>
+
 namespace age::visualizer {
 class VisualizerWindowMenuBar : public QMenuBar {
   Q_OBJECT
 public:
   explicit VisualizerWindowMenuBar(QWidget* parent = nullptr) noexcept;
+
+private:
+  cds::Array<cds::UniquePointer<QObject>> _storage;
 };
 } // namespace age::visualizer

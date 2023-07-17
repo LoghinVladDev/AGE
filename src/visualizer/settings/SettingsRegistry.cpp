@@ -39,16 +39,16 @@ auto addIndent(auto& out, int indent) -> void {
   }
 }
 
-auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int indent) -> void;
-auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int indent) -> void;
+auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonArray const& object, int currentIndent, int indent) -> void;
+auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonObject const& object, int currentIndent, int indent) -> void;
 
-auto filteredDump(auto& out, JsonElement const& object, int currentIndent, int indent) -> void {
+auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonElement const& object, int currentIndent, int indent) -> void {
   if (object.isJson()) {
-    filteredDump(out, object.getJson(), currentIndent, indent);
+    filteredDump(integrals, out, object.getJson(), currentIndent, indent);
   }
 
   if (object.isArray()) {
-    filteredDump(out, object.getArray(), currentIndent, indent);
+    filteredDump(integrals, out, object.getArray(), currentIndent, indent);
   }
 
   if (object.isString()) {
@@ -68,7 +68,7 @@ auto filteredDump(auto& out, JsonElement const& object, int currentIndent, int i
   }
 }
 
-auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int indent) -> void {
+auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonArray const& object, int currentIndent, int indent) -> void {
   if (object.empty()) {
     out << "[]";
     return;
@@ -79,13 +79,13 @@ auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int ind
 
   auto it = object.begin();
   addIndent(out, nextIndent);
-  filteredDump(out, *it, nextIndent, indent);
+  filteredDump(integrals, out, *it, nextIndent, indent);
   ++it;
 
   for (auto end = object.end(); it != end; ++it) {
     out << ",\n";
     addIndent(out, nextIndent);
-    filteredDump(out, *it, nextIndent, indent);
+    filteredDump(integrals, out, *it, nextIndent, indent);
   }
 
   out << "\n";
@@ -93,7 +93,7 @@ auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int ind
   out << "]";
 }
 
-auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int indent) -> void {
+auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonObject const& object, int currentIndent, int indent) -> void {
   if (object.empty() || object.count([](auto const& e) { return !e.value().isJson(); }) == 0u) {
     out << "{}";
     return;
@@ -108,7 +108,7 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
     skippedFirst = false;
     addIndent(out, nextIndent);
     out << '\"' << it->key() << "\" : ";
-    filteredDump(out, it->value(), nextIndent, indent);
+    filteredDump(integrals, out, it->value(), nextIndent, indent);
   }
   ++it;
 
@@ -124,7 +124,7 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
 
     addIndent(out, nextIndent);
     out << '\"' << it->key() << "\" : ";
-    filteredDump(out, it->value(), nextIndent, indent);
+    filteredDump(integrals, out, it->value(), nextIndent, indent);
   }
 
   out << "\n";
@@ -132,7 +132,9 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
   out << "}";
 }
 
-auto filteredDump(auto& out, JsonObject const& object, int indent = 2) -> void { filteredDump(out, object, 0, indent); }
+auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonObject const& object, int indent = 2) -> void {
+  filteredDump(integrals, out, object, 0, indent);
+}
 
 auto sub(StringRef& key) noexcept -> StringRef {
   auto dotPos = key.find('.');
@@ -214,21 +216,21 @@ auto loaderFn(JsonObject* main, JsonObject* copy) noexcept {
   std::cout << "Loaded config:\n" << dump(*main, 2u) << "\n";
 }
 
-auto saveUnderlying(Path const& path, String const& key, JsonObject const& json) -> void {
+auto saveUnderlying(ArrayRef<StringRef>& filtered, Path const& path, String const& key, JsonObject const& json) -> void {
   std::cout << "Saved underlying config json '" << path.toString() + "/" + key + ".json"
             << "':\n"
             << dump(json, 2u) << "\n";
   for (auto const& entry : json) {
     if (entry.value().isJson()) {
-      saveUnderlying(path / key, entry.key(), entry.value().getJson());
+      saveUnderlying(filtered, path / key, entry.key(), entry.value().getJson());
     }
   }
 
   PathAwareOfstream outFile((path / (key + ".json")).toString());
-  filteredDump(outFile, json);
+  filteredDump(filtered, outFile, json);
 }
 
-auto saverFn(Path const& path, JsonObject const* json) {
+auto saverFn(ArrayRef<StringRef> filtered, Path const& path, JsonObject const* json) {
   auto targetPath = path.parent() / path.node().toString().removeSuffix(".json");
   if (path.toString() == Registry::rootFileName) {
     targetPath = path.parent();
@@ -239,12 +241,12 @@ auto saverFn(Path const& path, JsonObject const* json) {
             << dump(*json, 2u) << "\n";
   for (auto const& entry : *json) {
     if (entry.value().isJson()) {
-      saveUnderlying(targetPath, entry.key(), entry.value().getJson());
+      saveUnderlying(filtered, targetPath, entry.key(), entry.value().getJson());
     }
   }
 
   PathAwareOfstream outFile(path.toString());
-  filteredDump(outFile, *json);
+  filteredDump(filtered, outFile, *json);
 }
 } // namespace
 
@@ -265,7 +267,7 @@ auto Registry::active() noexcept(false) -> Registry& {
 
 Registry::Registry([[maybe_unused]] Token) noexcept :
     _loader(cds::makeUnique<AsyncRunner<void, JsonObject*, JsonObject*>>(loaderFn)),
-    _saver(cds::makeUnique<AsyncRunner<void, Path, JsonObject const*>>(saverFn)) {
+    _saver(cds::makeUnique<AsyncRunner<void, ArrayRef<StringRef>, Path, JsonObject const*>>(saverFn)) {
   _loader->trigger(&_active, &_stored);
 }
 
@@ -341,7 +343,8 @@ auto Registry::save(StringRef key) noexcept(false) -> void {
     *lJson = *rJson;
   }
 
-  _saver->trigger(savePath, lJson);
+  Array<StringRef> integralPathsRefs {_integralPaths.begin(), _integralPaths.end()};
+  _saver->trigger(integralPathsRefs, savePath, lJson);
 }
 
 auto Registry::getInt(StringRef key) const noexcept(false) -> int { return get(_active, key).getInt(); }
@@ -417,4 +420,20 @@ auto Registry::getBooleanOr(StringRef key, bool value) noexcept(false) -> bool {
     put(key, value);
     return get(_active, key).getBoolean();
   }
+}
+
+auto Registry::markAsIntegral(StringRef key) noexcept(false) -> void {
+  _integralPaths.emplaceBack(key);
+}
+
+auto Registry::markAsComposite(StringRef key) noexcept(false) -> void {
+  _integralPaths.removeAllThat([&key](auto const& path) { return path == key; });
+}
+
+auto Registry::isIntegral(StringRef key) const noexcept(false) -> bool {
+  return _integralPaths.findFirstThat([&key](auto const& path){ return key == path; }) != _integralPaths.end();
+}
+
+auto Registry::isComposite(StringRef key) const noexcept(false) -> bool {
+  return !isIntegral(key);
 }

@@ -7,9 +7,9 @@
 #include <CDS/Types>
 
 namespace age::visualizer::meta {
-enum class ActionBinding : cds::uint32 {
+enum class ActionBinding : cds::sint64 {
 #define ACTION(name) AB_##name,
-  AB_nullAction = 0x80000000u,
+  AB_nullAction = 0x40000000,
 #include "ActionBindings.inc"
 #undef ACTION
 };

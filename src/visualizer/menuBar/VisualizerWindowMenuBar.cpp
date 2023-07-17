@@ -24,11 +24,17 @@ auto separatorGeneratorFormula() -> Generator<String> {
   }
 }
 
+auto isSeparator(StringRef key) {
+  return key.startsWith("__separator_");
+}
+
 auto separatorGenerator = separatorGeneratorFormula();
 
-auto const defaultConfig = JsonObject()
-                               .put("File",
-                                    JsonObject()
+auto const defaultConfigSet = JsonArray()
+                               .pushBack(
+                                   JsonObject().put(
+                                       "File",
+                                      JsonObject()
                                         .put("New",
                                              JsonObject()
                                                  .put("Project...", actionId(ActionBinding::AB_newProject))
@@ -39,29 +45,50 @@ auto const defaultConfig = JsonObject()
                                .put("Help",
                                     JsonObject()
                                         .put("Find Action...", actionId(ActionBinding::AB_findAction))
-                                        .put("About...", actionId(ActionBinding::AB_about)));
+                                        .put("About...", actionId(ActionBinding::AB_about))));
 
-auto loadByUnderlying(auto const* parent, auto const& name, JsonObject const& data) {
-  // empty for now
-  (void) parent;
-  (void) name;
-  (void) data;
+auto loadByUnderlying(auto& parent, auto const& name, auto const& data, auto& itemStorage) -> void;
+
+auto loadByUnderlying(auto& parent, auto const& name, JsonObject const& data, auto& itemStorage) -> void {
+  auto menu = makeUnique<QMenu>(name.cStr(), parent);
+  for (auto const& menuData : data) {
+    auto const& name = menuData.key();
+    auto const& items = menuData.value();
+    loadByUnderlying(menu, name, items, itemStorage);
+  }
+  parent->addMenu(menu);
+  itemStorage.pushBack(std::move(menu));
 }
 
-auto loadByUnderlying(auto const* parent, auto const& name, auto const& data) {
+auto loadByUnderlying(auto& parent, auto const& name, long long data, auto& itemStorage) -> void {
+  parent->addAction(static_cast<QAction*>(itemStorage.pushBack(cds::makeUnique<QAction>(name.cStr(), parent)).get()));
+}
+
+auto loadByUnderlying(auto& parent, auto const& name, auto const& data, auto& itemStorage) -> void {
   if (data.isJson()) {
-    return loadByUnderlying(parent, name, data.getJson());
+    return loadByUnderlying(parent, name, data.getJson(), itemStorage);
+  }
+
+  if (data.isLong()) {
+    return loadByUnderlying(parent, name, data.getLong(), itemStorage);
+  }
+
+  if (data.isString() && isSeparator(name)) {
+    parent->addSeparator();
   }
 }
 
-auto loadMenuConfig(QMenuBar* menu) -> void {
-  auto& config = registry().getJsonOr("window.menubar", defaultConfig);
-  for (auto const& primaryMenuData : config) {
+auto loadMenuConfig(QMenuBar* menu, auto& itemStorage) -> void {
+  registry().markAsIntegral("window.menubar");
+  auto& configs = registry().getArrayOr("window.menubar", defaultConfigSet);
+  for (auto const& primaryMenuData : configs[0u].getJson()) {
     auto const& primaryMenuName = primaryMenuData.key();
     auto const& primaryMenuItems = primaryMenuData.value();
-    loadByUnderlying(menu, primaryMenuName, primaryMenuItems);
+    loadByUnderlying(menu, primaryMenuName, primaryMenuItems, itemStorage);
   }
 }
 } // namespace
 
-VisualizerWindowMenuBar::VisualizerWindowMenuBar(QWidget* parent) noexcept : QMenuBar(parent) { loadMenuConfig(this); }
+VisualizerWindowMenuBar::VisualizerWindowMenuBar(QWidget* parent) noexcept : QMenuBar(parent) {
+  loadMenuConfig(this, _storage);
+}

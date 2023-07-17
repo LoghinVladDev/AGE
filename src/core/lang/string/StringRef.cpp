@@ -130,3 +130,31 @@ auto StringRef::operator+(StringRef const& ref) const noexcept -> String {
 auto StringRef::operator<=>(StringRef const& ref) const noexcept -> std::weak_ordering {
   return toWeakOrdering(StringUtils<char>::compare(data(), size(), ref.data(), ref.size()));
 }
+
+auto StringRef::startsWith(char character) const noexcept -> bool {
+  return !empty() && _buffer[0u] == character;
+}
+
+auto StringRef::endsWith(char character) const noexcept -> bool {
+  return !empty() && _buffer[_size - 1u] == character;
+}
+
+auto StringRef::startsWith(StringRef sequence) const noexcept -> bool {
+  auto offset = 0u;
+  for (auto minLength = minOf(_size, sequence._size); offset < minLength; ++offset) {
+    if (_buffer[offset] != sequence._buffer[offset]) {
+      return false;
+    }
+  }
+  return offset == sequence._size;
+}
+
+auto StringRef::endsWith(StringRef sequence) const noexcept -> bool {
+  auto offset = 0u;
+  for (auto minLength = minOf(_size, sequence._size); offset < minLength; ++offset) {
+    if (_buffer[_size - offset - 1u] != sequence._buffer[sequence._size - offset - 1u]) {
+      return false;
+    }
+  }
+  return offset = sequence._size;
+}
