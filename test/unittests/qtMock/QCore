@@ -1,0 +1,11 @@
+//
+// Created by stefan on 24.07.2023.
+//
+#pragma once
+
+struct Qt {
+  enum QColor {
+    blue,
+    red
+  };
+};

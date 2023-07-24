@@ -1,0 +1,14 @@
+//
+// Created by stefan on 24.07.2023.
+//
+#pragma once
+
+struct QPoint {
+  QPoint(int x, int y) : _x(x), _y(y) {}
+
+  auto x() const { return _x; }
+  auto y() const { return _y; }
+
+  int _x;
+  int _y;
+};

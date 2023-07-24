@@ -11,6 +11,7 @@ struct QWidget;
 struct QLayout {
   explicit QLayout(QWidget*) noexcept {}
   virtual ~QLayout() noexcept = default;
+  auto addWidget(QWidget*) {}
 };
 
 #endif // AGE_MOCK_QLAYOUT
