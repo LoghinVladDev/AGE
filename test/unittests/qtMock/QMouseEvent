@@ -1,0 +1,13 @@
+//
+// Created by Vlad-Andrei Loghin on 18.06.23.
+//
+
+#ifndef AGE_MOCK_QMOUSEEVENT
+#define AGE_MOCK_QMOUSEEVENT
+
+#include <QCommon>
+
+struct QMouseEvent {
+};
+
+#endif // AGE_MOCK_QMOUSEEVENT

@@ -8,7 +8,9 @@
 #include <CDS/memory/UniquePointer>
 
 #include <QLayout>
+#include <QMouseEvent>
 #include <QWidget>
+#include <graphPanel/GraphPanel.hpp>
 
 namespace age::visualizer {
 class VisualizerWindow : public QWidget {
@@ -16,7 +18,6 @@ class VisualizerWindow : public QWidget {
 public:
   explicit VisualizerWindow(QWidget* pParent = nullptr) noexcept;
   ~VisualizerWindow() noexcept override = default;
-  void mousePressEvent(QMouseEvent *event) override;
 
 private:
   cds::UniquePointer<QLayout> _primaryLayout {nullptr};

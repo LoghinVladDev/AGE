@@ -4,11 +4,13 @@
 
 #include "VisualizerWindow.hpp"
 #include <QVBoxLayout>
+//#include <QGraphicsScene>
 
 namespace age::visualizer {
 VisualizerWindow::VisualizerWindow(QWidget* pParent) noexcept :
     QWidget(pParent), _primaryLayout(cds::makeUnique<QVBoxLayout>(this)) {
-  resize(200, 300);
+  resize(500, 500);
+  auto graphPanel = new GraphPanel();
+  this->_primaryLayout->addWidget(graphPanel);
 }
-void VisualizerWindow::mousePressEvent(QMouseEvent* event) { std::cout<<"Clicked\n"; QWidget::mousePressEvent(event);   }
 } // namespace age::visualizer

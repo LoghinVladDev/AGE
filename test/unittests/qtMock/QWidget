@@ -6,12 +6,15 @@
 #define AGE_MOCK_QWIDGET
 
 #include <QCommon>
+#include <QMouseEvent>
 
 struct QWidget {
   auto resize(int, int) noexcept -> void {}
   auto show() noexcept -> void {}
   explicit QWidget(QWidget* = nullptr) {}
   virtual ~QWidget() noexcept = default;
+  virtual void mousePressEvent(QMouseEvent *event) {};
+
 };
 
 #endif // AGE_MOCK_QWIDGET
