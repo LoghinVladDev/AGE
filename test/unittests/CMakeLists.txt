@@ -46,6 +46,8 @@ if(DEFINED QT_VERSION)
       UNIT_TEST_SOURCES
       ${UNIT_TEST_SOURCES}
       qtMock/VisualizerWindowTest.cpp
+      qtMock/GraphPanelTest.cpp
+      qtMock/VertexTest.cpp
       SettingsRegistryTest.cpp
   )
 
