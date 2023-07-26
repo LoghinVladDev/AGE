@@ -47,8 +47,8 @@ public:
 
   auto markAsIntegral(StringRef key) noexcept(false) -> void;
   auto markAsComposite(StringRef key) noexcept(false) -> void;
-  auto isIntegral(StringRef key) const noexcept(false) -> bool;
-  auto isComposite(StringRef key) const noexcept(false) -> bool;
+  [[nodiscard]] auto isIntegral(StringRef key) const noexcept(false) -> bool;
+  [[nodiscard]] auto isComposite(StringRef key) const noexcept(false) -> bool;
 
   template <typename Convertible> [[nodiscard]] auto getStringOr(StringRef key, Convertible&& value) noexcept(false)
       -> cds::String const&;
@@ -76,9 +76,9 @@ private:
   cds::json::JsonObject _active;
   cds::json::JsonObject _stored;
   cds::UniquePointer<AsyncRunner<void, cds::json::JsonObject*, cds::json::JsonObject*>> const _loader;
-  cds::UniquePointer<AsyncRunner<void, ArrayRef<StringRef>, cds::filesystem::Path, cds::json::JsonObject const*>> const _saver;
+  cds::UniquePointer<
+      AsyncRunner<void, cds::Array<StringRef>, cds::filesystem::Path, cds::json::JsonObject const*>> const _saver;
   cds::Array<cds::String> _integralPaths;
-  static constexpr cds::StringView const pathInternalPrefix = "__resourcepath__";
   static inline cds::UniquePointer<Registry> _registry = nullptr;
 };
 

@@ -76,4 +76,10 @@ private:
   cds::Size _size {0u};
   using Utils = cds::StringUtils<char>;
 };
+
+inline auto ref(cds::String const& string) noexcept { return StringRef(string); }
+inline auto ref(cds::StringView const& string) noexcept { return StringRef(string); }
+inline auto ref(std::string const& string) noexcept { return StringRef(string); }
+inline auto ref(std::string_view const& string) noexcept { return StringRef(string); }
+inline auto ref(char const* string) noexcept { return StringRef(string); }
 } // namespace age

@@ -26,23 +26,25 @@ using std::mutex;
 using std::tuple;
 using std::unique_lock;
 
-constexpr auto const paddingBufferSize = 128;
-constexpr char const paddingBuffer[paddingBufferSize + 1] = "                                "
-                                                            "                                "
-                                                            "                                "
-                                                            "                                ";
+constinit StringView const paddingBuffer = "                                "
+                                           "                                "
+                                           "                                "
+                                           "                                ";
 
 auto addIndent(auto& out, int indent) -> void {
   while (indent > 0) {
-    out.write(paddingBuffer, std::min(indent, paddingBufferSize));
-    indent -= paddingBufferSize;
+    out.write(paddingBuffer.data(), cds::minOf(indent, paddingBuffer.size()));
+    indent -= static_cast<int>(paddingBuffer.size());
   }
 }
 
-auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonArray const& object, int currentIndent, int indent) -> void;
-auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonObject const& object, int currentIndent, int indent) -> void;
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonArray const& object, int currentIndent, int indent)
+    -> void;
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonObject const& object, int currentIndent, int indent)
+    -> void;
 
-auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonElement const& object, int currentIndent, int indent) -> void {
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonElement const& object, int currentIndent, int indent)
+    -> void {
   if (object.isJson()) {
     filteredDump(integrals, out, object.getJson(), currentIndent, indent);
   }
@@ -68,7 +70,8 @@ auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonElement const& 
   }
 }
 
-auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonArray const& object, int currentIndent, int indent) -> void {
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonArray const& object, int currentIndent, int indent)
+    -> void {
   if (object.empty()) {
     out << "[]";
     return;
@@ -93,7 +96,8 @@ auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonArray const& ob
   out << "]";
 }
 
-auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonObject const& object, int currentIndent, int indent) -> void {
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonObject const& object, int currentIndent, int indent)
+    -> void {
   if (object.empty() || object.count([](auto const& e) { return !e.value().isJson(); }) == 0u) {
     out << "{}";
     return;
@@ -132,7 +136,7 @@ auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonObject const& o
   out << "}";
 }
 
-auto filteredDump(ArrayRef<StringRef>& integrals, auto& out, JsonObject const& object, int indent = 2) -> void {
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonObject const& object, int indent = 2) -> void {
   filteredDump(integrals, out, object, 0, indent);
 }
 
@@ -153,7 +157,7 @@ auto convertToPath(StringRef key) noexcept -> String {
   while (key) {
     auto dotPos = key.find('.');
     if (dotPos == StringRef::npos) {
-      dotPos = key.size();
+      dotPos = static_cast<decltype(dotPos)>(key.size());
     }
 
     path += StringView(key.takeFront(dotPos));
@@ -216,10 +220,38 @@ auto loaderFn(JsonObject* main, JsonObject* copy) noexcept {
   std::cout << "Loaded config:\n" << dump(*main, 2u) << "\n";
 }
 
-auto saveUnderlying(ArrayRef<StringRef>& filtered, Path const& path, String const& key, JsonObject const& json) -> void {
+auto identifyPaths(ArrayRef<StringRef> filtered, StringRef key) noexcept -> Array<StringRef> {
+  Array<StringRef> matchingPaths;
+  for (auto const& path : filtered) {
+    if (path.startsWith(key)) {
+      matchingPaths.emplaceBack(path.dropFront(key.size() + 1u));
+    }
+  }
+  return matchingPaths;
+}
+
+auto replace(String string, char with, char what) -> String {
+  for (auto& c : string) {
+    if (c == with) {
+      c = what;
+    }
+  }
+  return string;
+}
+
+auto identifyRootPaths(ArrayRef<StringRef> filtered, Path const& path) noexcept -> Array<StringRef> {
+  return identifyPaths(
+      filtered,
+      replace(path.toString().removeSuffix(".json").removePrefix(Registry::defaultPath).removePrefix("/"),
+              directorySeparator, '.'));
+}
+
+auto saveUnderlying(ArrayRef<StringRef> filtered, Path const& path, String const& key, JsonObject const& json) -> void {
   std::cout << "Saved underlying config json '" << path.toString() + "/" + key + ".json"
             << "':\n"
             << dump(json, 2u) << "\n";
+
+  auto matchingRoutePaths = identifyPaths(filtered, key);
   for (auto const& entry : json) {
     if (entry.value().isJson()) {
       saveUnderlying(filtered, path / key, entry.key(), entry.value().getJson());
@@ -230,23 +262,24 @@ auto saveUnderlying(ArrayRef<StringRef>& filtered, Path const& path, String cons
   filteredDump(filtered, outFile, json);
 }
 
-auto saverFn(ArrayRef<StringRef> filtered, Path const& path, JsonObject const* json) {
+auto saverFn(Array<StringRef> filtered, Path const& path, JsonObject const* json) {
   auto targetPath = path.parent() / path.node().toString().removeSuffix(".json");
   if (path.toString() == Registry::rootFileName) {
     targetPath = path.parent();
   }
 
+  auto matchingRoutePaths = identifyRootPaths(filtered, path);
   std::cout << "Saved config json '" << targetPath.toString() + ".json"
             << "':\n"
             << dump(*json, 2u) << "\n";
   for (auto const& entry : *json) {
     if (entry.value().isJson()) {
-      saveUnderlying(filtered, targetPath, entry.key(), entry.value().getJson());
+      saveUnderlying(ref(filtered), targetPath, entry.key(), entry.value().getJson());
     }
   }
 
   PathAwareOfstream outFile(path.toString());
-  filteredDump(filtered, outFile, *json);
+  filteredDump(ref(filtered), outFile, *json);
 }
 } // namespace
 
@@ -267,7 +300,7 @@ auto Registry::active() noexcept(false) -> Registry& {
 
 Registry::Registry([[maybe_unused]] Token) noexcept :
     _loader(cds::makeUnique<AsyncRunner<void, JsonObject*, JsonObject*>>(loaderFn)),
-    _saver(cds::makeUnique<AsyncRunner<void, ArrayRef<StringRef>, Path, JsonObject const*>>(saverFn)) {
+    _saver(cds::makeUnique<AsyncRunner<void, Array<StringRef>, Path, JsonObject const*>>(saverFn)) {
   _loader->trigger(&_active, &_stored);
 }
 
@@ -343,8 +376,7 @@ auto Registry::save(StringRef key) noexcept(false) -> void {
     *lJson = *rJson;
   }
 
-  Array<StringRef> integralPathsRefs {_integralPaths.begin(), _integralPaths.end()};
-  _saver->trigger(integralPathsRefs, savePath, lJson);
+  _saver->trigger(Array<StringRef> {_integralPaths.begin(), _integralPaths.end()}, savePath, lJson);
 }
 
 auto Registry::getInt(StringRef key) const noexcept(false) -> int { return get(_active, key).getInt(); }
@@ -423,10 +455,12 @@ auto Registry::getBooleanOr(StringRef key, bool value) noexcept(false) -> bool {
 }
 
 auto Registry::markAsIntegral(StringRef key) noexcept(false) -> void {
+  assert(!key.empty() && "Key must not be an empty string");
   _integralPaths.emplaceBack(key);
 }
 
 auto Registry::markAsComposite(StringRef key) noexcept(false) -> void {
+  assert(!key.empty() && "Key must not be an empty string");
   _integralPaths.removeAllThat([&key](auto const& path) { return path == key; });
 }
 

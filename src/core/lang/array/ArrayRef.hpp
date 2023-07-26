@@ -60,10 +60,20 @@ public:
   [[nodiscard]] constexpr auto size() const noexcept { return _size; }
   [[nodiscard]] constexpr auto empty() const noexcept { return data() == nullptr || size() == 0u; }
 
+  [[nodiscard]] constexpr auto begin() noexcept -> T* { return _buffer; }
+  [[nodiscard]] constexpr auto end() noexcept -> T* { return _buffer + _size; }
+  [[nodiscard]] constexpr auto cbegin() const noexcept -> T const* { return _buffer; }
+  [[nodiscard]] constexpr auto cend() const noexcept -> T const* { return _buffer + _size; }
+
 private:
   T* _buffer {nullptr};
   cds::Size _size {0u};
 };
+
+template <typename T> auto ref(cds::Array<T>& array) noexcept { return ArrayRef<T>(array); }
+template <typename T> auto ref(std::vector<T>& array) noexcept { return ArrayRef<T>(array); }
+template <typename T, cds::Size size> auto ref(cds::StaticArray<T, size>& array) noexcept { return ArrayRef<T>(array); }
+template <typename T, cds::Size size> auto ref(std::array<T, size>& array) noexcept { return ArrayRef<T>(array); }
 
 template <typename T> ArrayRef<T>::ArrayRef(cds::Array<T>& array) noexcept :
     ArrayRef(array.data(), array.size()) {}
