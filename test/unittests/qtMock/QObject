@@ -1,0 +1,9 @@
+//
+// Created by Vlad-Andrei Loghin on 26.07.23.
+//
+
+#pragma once
+
+struct QObject {
+  QObject(QObject* = nullptr) {}
+};

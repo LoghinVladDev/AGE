@@ -2,16 +2,30 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_MOCK_QWIDGET
-#define AGE_MOCK_QWIDGET
+#pragma once
 
 #include <QCommon>
+#include <QPoint>
+#include <QSize>
+#include <QLayout>
+#include <QObject>
 
-struct QWidget {
+struct QCloseEvent;
+
+struct QWidget : QObject {
   auto resize(int, int) noexcept -> void {}
+  auto move(int, int) noexcept -> void {}
   auto show() noexcept -> void {}
   explicit QWidget(QWidget* = nullptr) {}
   virtual ~QWidget() noexcept = default;
-};
+  virtual void closeEvent(QCloseEvent*) {}
+  auto x() const { return 100; }
+  auto y() const { return 100; }
+  auto width() const { return 1280; }
+  auto height() const { return 720; }
+  auto size() const { return QSize{width(), height()}; }
+  auto pos() const { return QPoint{x(), y()}; }
+  auto layout() const -> QLayout* { return &_placeholderLayout; }
 
-#endif // AGE_MOCK_QWIDGET
+  static inline QLayout _placeholderLayout;
+};

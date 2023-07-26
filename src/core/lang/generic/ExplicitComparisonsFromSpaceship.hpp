@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 01.07.23.
 //
 
-#ifndef AGE_EXPLICIT_COMPARISONS_FROM_SPACESHIP_HPP
-#define AGE_EXPLICIT_COMPARISONS_FROM_SPACESHIP_HPP
-
+#pragma once
 #include <compare>
 
 namespace age::meta::op {
@@ -16,5 +14,3 @@ public:
   }
 };
 } // namespace age::meta::op
-
-#endif // AGE_EXPLICIT_COMPARISONS_FROM_SPACESHIP_HPP

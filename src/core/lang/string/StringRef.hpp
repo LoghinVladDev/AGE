@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 20.06.23.
 //
 
-#ifndef AGE_STRING_REF_HPP
-#define AGE_STRING_REF_HPP
-
+#pragma once
 #include <CDS/Object>
 #include <string>
 
@@ -42,7 +40,7 @@ public:
     return operator=(StringRef(string));
   }
 
-  [[nodiscard]] explicit(false) operator bool() const noexcept;
+  [[nodiscard]] explicit operator bool() const noexcept;
   [[nodiscard]] explicit(false) operator cds::StringView() const noexcept;
   [[nodiscard]] explicit(false) operator cds::String() const noexcept;
 
@@ -66,6 +64,11 @@ public:
   [[nodiscard]] constexpr auto size() const noexcept { return _size; }
   [[nodiscard]] constexpr auto empty() const noexcept -> bool { return data() == nullptr || size() == 0u; }
 
+  [[nodiscard]] auto startsWith(char character) const noexcept -> bool;
+  [[nodiscard]] auto startsWith(StringRef sequence) const noexcept -> bool;
+  [[nodiscard]] auto endsWith(char character) const noexcept -> bool;
+  [[nodiscard]] auto endsWith(StringRef sequence) const noexcept -> bool;
+
   static constexpr cds::Index const npos = cds::String::invalidIndex;
 
 private:
@@ -73,6 +76,10 @@ private:
   cds::Size _size {0u};
   using Utils = cds::StringUtils<char>;
 };
-} // namespace age
 
-#endif // AGE_STRING_REF_HPP
+inline auto ref(cds::String const& string) noexcept { return StringRef(string); }
+inline auto ref(cds::StringView const& string) noexcept { return StringRef(string); }
+inline auto ref(std::string const& string) noexcept { return StringRef(string); }
+inline auto ref(std::string_view const& string) noexcept { return StringRef(string); }
+inline auto ref(char const* string) noexcept { return StringRef(string); }
+} // namespace age

@@ -26,29 +26,31 @@ using std::mutex;
 using std::tuple;
 using std::unique_lock;
 
-constexpr auto const paddingBufferSize = 128;
-constexpr char const paddingBuffer[paddingBufferSize + 1] = "                                "
-                                                            "                                "
-                                                            "                                "
-                                                            "                                ";
+constinit StringView const paddingBuffer = "                                "
+                                           "                                "
+                                           "                                "
+                                           "                                ";
 
 auto addIndent(auto& out, int indent) -> void {
   while (indent > 0) {
-    out.write(paddingBuffer, std::min(indent, paddingBufferSize));
-    indent -= paddingBufferSize;
+    out.write(paddingBuffer.data(), cds::minOf(indent, paddingBuffer.size()));
+    indent -= static_cast<int>(paddingBuffer.size());
   }
 }
 
-auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int indent) -> void;
-auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int indent) -> void;
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonArray const& object, int currentIndent, int indent)
+    -> void;
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonObject const& object, int currentIndent, int indent)
+    -> void;
 
-auto filteredDump(auto& out, JsonElement const& object, int currentIndent, int indent) -> void {
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonElement const& object, int currentIndent, int indent)
+    -> void {
   if (object.isJson()) {
-    filteredDump(out, object.getJson(), currentIndent, indent);
+    filteredDump(integrals, out, object.getJson(), currentIndent, indent);
   }
 
   if (object.isArray()) {
-    filteredDump(out, object.getArray(), currentIndent, indent);
+    filteredDump(integrals, out, object.getArray(), currentIndent, indent);
   }
 
   if (object.isString()) {
@@ -68,7 +70,8 @@ auto filteredDump(auto& out, JsonElement const& object, int currentIndent, int i
   }
 }
 
-auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int indent) -> void {
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonArray const& object, int currentIndent, int indent)
+    -> void {
   if (object.empty()) {
     out << "[]";
     return;
@@ -79,13 +82,13 @@ auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int ind
 
   auto it = object.begin();
   addIndent(out, nextIndent);
-  filteredDump(out, *it, nextIndent, indent);
+  filteredDump(integrals, out, *it, nextIndent, indent);
   ++it;
 
   for (auto end = object.end(); it != end; ++it) {
     out << ",\n";
     addIndent(out, nextIndent);
-    filteredDump(out, *it, nextIndent, indent);
+    filteredDump(integrals, out, *it, nextIndent, indent);
   }
 
   out << "\n";
@@ -93,7 +96,8 @@ auto filteredDump(auto& out, JsonArray const& object, int currentIndent, int ind
   out << "]";
 }
 
-auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int indent) -> void {
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonObject const& object, int currentIndent, int indent)
+    -> void {
   if (object.empty() || object.count([](auto const& e) { return !e.value().isJson(); }) == 0u) {
     out << "{}";
     return;
@@ -108,7 +112,7 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
     skippedFirst = false;
     addIndent(out, nextIndent);
     out << '\"' << it->key() << "\" : ";
-    filteredDump(out, it->value(), nextIndent, indent);
+    filteredDump(integrals, out, it->value(), nextIndent, indent);
   }
   ++it;
 
@@ -124,7 +128,7 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
 
     addIndent(out, nextIndent);
     out << '\"' << it->key() << "\" : ";
-    filteredDump(out, it->value(), nextIndent, indent);
+    filteredDump(integrals, out, it->value(), nextIndent, indent);
   }
 
   out << "\n";
@@ -132,7 +136,9 @@ auto filteredDump(auto& out, JsonObject const& object, int currentIndent, int in
   out << "}";
 }
 
-auto filteredDump(auto& out, JsonObject const& object, int indent = 2) -> void { filteredDump(out, object, 0, indent); }
+auto filteredDump(ArrayRef<StringRef> integrals, auto& out, JsonObject const& object, int indent = 2) -> void {
+  filteredDump(integrals, out, object, 0, indent);
+}
 
 auto sub(StringRef& key) noexcept -> StringRef {
   auto dotPos = key.find('.');
@@ -145,24 +151,13 @@ auto sub(StringRef& key) noexcept -> StringRef {
   return rVal;
 }
 
-auto get(auto& json, StringRef key) noexcept(false) -> auto& {
-  auto current = &json;
-  auto subKey = sub(key);
-  while (key) {
-    current = &current->getJson(subKey);
-    subKey = sub(key);
-  }
-
-  return current->get(subKey);
-}
-
 auto convertToPath(StringRef key) noexcept -> String {
   String path = Registry::defaultPath;
   path += directorySeparator;
   while (key) {
     auto dotPos = key.find('.');
     if (dotPos == StringRef::npos) {
-      dotPos = key.size();
+      dotPos = static_cast<decltype(dotPos)>(key.size());
     }
 
     path += StringView(key.takeFront(dotPos));
@@ -175,7 +170,7 @@ auto convertToPath(StringRef key) noexcept -> String {
 }
 
 auto recursiveLoad(Map<String, JsonElement>& map, Path const& path) noexcept -> void {
-  for (auto const& entry : path.walk(1u)) {
+  for (auto const& entry : path.walk(0u)) {
     for (auto const& file : entry.files()) {
       if (!file.endsWith(".json")) {
         continue;
@@ -222,28 +217,69 @@ auto loaderFn(JsonObject* main, JsonObject* copy) noexcept {
   }
 
   *copy = *main;
+  std::cout << "Loaded config:\n" << dump(*main, 2u) << "\n";
 }
 
-auto saveUnderlying(Path const& path, String const& key, JsonObject const& json) -> void {
+auto identifyPaths(ArrayRef<StringRef> filtered, StringRef key) noexcept -> Array<StringRef> {
+  Array<StringRef> matchingPaths;
+  for (auto const& path : filtered) {
+    if (path.startsWith(key)) {
+      matchingPaths.emplaceBack(path.dropFront(key.size() + 1u));
+    }
+  }
+  return matchingPaths;
+}
+
+auto replace(String string, char with, char what) -> String {
+  for (auto& c : string) {
+    if (c == with) {
+      c = what;
+    }
+  }
+  return string;
+}
+
+auto identifyRootPaths(ArrayRef<StringRef> filtered, Path const& path) noexcept -> Array<StringRef> {
+  return identifyPaths(
+      filtered,
+      replace(path.toString().removeSuffix(".json").removePrefix(Registry::defaultPath).removePrefix("/"),
+              directorySeparator, '.'));
+}
+
+auto saveUnderlying(ArrayRef<StringRef> filtered, Path const& path, String const& key, JsonObject const& json) -> void {
+  std::cout << "Saved underlying config json '" << path.toString() + "/" + key + ".json"
+            << "':\n"
+            << dump(json, 2u) << "\n";
+
+  auto matchingRoutePaths = identifyPaths(filtered, key);
   for (auto const& entry : json) {
     if (entry.value().isJson()) {
-      saveUnderlying(path / key, entry.key(), entry.value().getJson());
+      saveUnderlying(filtered, path / key, entry.key(), entry.value().getJson());
     }
   }
 
   PathAwareOfstream outFile((path / (key + ".json")).toString());
-  filteredDump(outFile, json);
+  filteredDump(filtered, outFile, json);
 }
 
-auto saverFn(Path const& path, JsonObject const* json) {
+auto saverFn(Array<StringRef> filtered, Path const& path, JsonObject const* json) {
+  auto targetPath = path.parent() / path.node().toString().removeSuffix(".json");
+  if (path.toString() == Registry::rootFileName) {
+    targetPath = path.parent();
+  }
+
+  auto matchingRoutePaths = identifyRootPaths(filtered, path);
+  std::cout << "Saved config json '" << targetPath.toString() + ".json"
+            << "':\n"
+            << dump(*json, 2u) << "\n";
   for (auto const& entry : *json) {
     if (entry.value().isJson()) {
-      saveUnderlying(path.parent(), entry.key(), entry.value().getJson());
+      saveUnderlying(ref(filtered), targetPath, entry.key(), entry.value().getJson());
     }
   }
 
   PathAwareOfstream outFile(path.toString());
-  filteredDump(outFile, *json);
+  filteredDump(ref(filtered), outFile, *json);
 }
 } // namespace
 
@@ -264,7 +300,7 @@ auto Registry::active() noexcept(false) -> Registry& {
 
 Registry::Registry([[maybe_unused]] Token) noexcept :
     _loader(cds::makeUnique<AsyncRunner<void, JsonObject*, JsonObject*>>(loaderFn)),
-    _saver(cds::makeUnique<AsyncRunner<void, Path, JsonObject const*>>(saverFn)) {
+    _saver(cds::makeUnique<AsyncRunner<void, Array<StringRef>, Path, JsonObject const*>>(saverFn)) {
   _loader->trigger(&_active, &_stored);
 }
 
@@ -287,41 +323,60 @@ auto Registry::reset(StringRef key) noexcept(false) -> void {
   lJson->get(subKey) = rJson->get(subKey);
 }
 
-auto Registry::replaceIfMissing(JsonObject* pJson, StringRef key, bool overwriteType) noexcept -> void {
+auto Registry::replaceIfMissing(JsonObject* pJson, StringRef key, bool overwriteType) noexcept -> bool {
   if (auto jsonIt = pJson->find(key); jsonIt == pJson->end()) {
     pJson->put(key, JsonObject());
+    return true;
   } else if (overwriteType || !jsonIt->value().isJson()) {
+    auto overwritten = !jsonIt->value().isJson();
     jsonIt->value() = JsonObject();
+    return overwritten;
   }
+  return false;
 }
 
 auto Registry::save(StringRef key) noexcept(false) -> void {
   _saver->await();
   auto lJson = &_stored;
   auto rJson = &_active;
+  auto overwrittenSaveRoot = false;
   String savePath = key ? convertToPath(key) : rootFileName;
 
   if (key) {
     auto subKey = sub(key);
     while (key) {
-      replaceIfMissing(lJson, subKey, true);
+      if (replaceIfMissing(lJson, subKey, true)) {
+        savePath = convertToPath(key);
+        break;
+      }
 
       lJson = &lJson->getJson(subKey);
       rJson = &rJson->getJson(subKey);
       subKey = sub(key);
     }
-    replaceIfMissing(lJson, subKey);
-    auto& lSub = lJson->get(subKey);
-    auto const& rSub = rJson->get(subKey);
-    lSub = rSub;
-    if (lSub.isJson()) {
-      lJson = &lSub.getJson();
+
+    overwrittenSaveRoot = replaceIfMissing(lJson, subKey);
+    if (!overwrittenSaveRoot) {
+      auto& lSub = lJson->get(subKey);
+      auto const& rSub = rJson->get(subKey);
+      bool saveUnderlying = false;
+      if (lSub.isJson()) {
+        saveUnderlying = true;
+      }
+
+      lSub = rSub;
+      if (saveUnderlying) {
+        lJson = &lSub.getJson();
+      }
+    } else {
+      savePath = rootFileName;
+      *lJson = *rJson;
     }
   } else {
     *lJson = *rJson;
   }
 
-  _saver->trigger(savePath, lJson);
+  _saver->trigger(Array<StringRef> {_integralPaths.begin(), _integralPaths.end()}, savePath, lJson);
 }
 
 auto Registry::getInt(StringRef key) const noexcept(false) -> int { return get(_active, key).getInt(); }
@@ -347,4 +402,72 @@ auto Registry::awaitPending() noexcept -> void {
   auto& r = registry();
   r._saver->await();
   r._loader->await();
+}
+
+auto Registry::getIntOr(StringRef key, int value) noexcept(false) -> int {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getInt();
+  } catch (cds::KeyException const&) {
+    put(key, value);
+    return get(_active, key).getInt();
+  }
+}
+
+auto Registry::getLongOr(StringRef key, long value) noexcept(false) -> long {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getLong();
+  } catch (cds::KeyException const&) {
+    put(key, static_cast<long long>(value));
+    return get(_active, key).getLong();
+  }
+}
+
+auto Registry::getFloatOr(StringRef key, float value) noexcept(false) -> float {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getFloat();
+  } catch (cds::KeyException const&) {
+    put(key, value);
+    return get(_active, key).getFloat();
+  }
+}
+
+auto Registry::getDoubleOr(StringRef key, double value) noexcept(false) -> double {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getDouble();
+  } catch (cds::KeyException const&) {
+    put(key, value);
+    return get(_active, key).getDouble();
+  }
+}
+
+auto Registry::getBooleanOr(StringRef key, bool value) noexcept(false) -> bool {
+  // TODO: This can be improved to partially search and then fill
+  try {
+    return get(_active, key).getBoolean();
+  } catch (cds::KeyException const&) {
+    put(key, value);
+    return get(_active, key).getBoolean();
+  }
+}
+
+auto Registry::markAsIntegral(StringRef key) noexcept(false) -> void {
+  assert(!key.empty() && "Key must not be an empty string");
+  _integralPaths.emplaceBack(key);
+}
+
+auto Registry::markAsComposite(StringRef key) noexcept(false) -> void {
+  assert(!key.empty() && "Key must not be an empty string");
+  _integralPaths.removeAllThat([&key](auto const& path) { return path == key; });
+}
+
+auto Registry::isIntegral(StringRef key) const noexcept(false) -> bool {
+  return _integralPaths.findFirstThat([&key](auto const& path){ return key == path; }) != _integralPaths.end();
+}
+
+auto Registry::isComposite(StringRef key) const noexcept(false) -> bool {
+  return !isIntegral(key);
 }

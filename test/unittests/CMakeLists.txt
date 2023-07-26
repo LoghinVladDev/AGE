@@ -25,6 +25,7 @@ set(
 
 set(
     UNIT_TEST_SOURCES
+    ArrayRefTest.cpp
     AsyncRunnerTest.cpp
     DummyTest.cpp
     GeneratorTest.cpp
@@ -84,6 +85,7 @@ if(DEFINED QT_VERSION)
   target_include_directories(
       lib.visualizer_core_mock
       PRIVATE
+      ${CMAKE_SOURCE_DIR}/src/visualizer
       ${QT_MOCK_INCLUDE}
       ${COMMON_INCLUDE_DIRECTORIES}
   )

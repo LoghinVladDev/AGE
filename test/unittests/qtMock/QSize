@@ -1,0 +1,15 @@
+//
+// Created by Vlad-Andrei Loghin on 10.07.23.
+//
+
+#pragma once
+
+struct QSize {
+  QSize(int w, int h) : w(w), h(h) {}
+
+  auto width() const { return w; }
+  auto height() const { return h; }
+
+  int w;
+  int h;
+};

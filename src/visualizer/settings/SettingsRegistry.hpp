@@ -2,13 +2,13 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_SETTINGS_REGISTRY_HPP
-#define AGE_SETTINGS_REGISTRY_HPP
+#pragma once
 
 #include <CDS/Union>
 #include <CDS/memory/UniquePointer>
 #include <CDS/util/JSON>
 
+#include <lang/array/ArrayRef.hpp>
 #include <lang/string/StringRef.hpp>
 #include <lang/thread/AsyncRunner.hpp>
 
@@ -39,6 +39,24 @@ public:
   [[nodiscard]] auto getArray(StringRef key) noexcept(false) -> cds::json::JsonArray&;
   [[nodiscard]] auto getJson(StringRef key) noexcept(false) -> cds::json::JsonObject&;
 
+  [[nodiscard]] auto getIntOr(StringRef key, int value) noexcept(false) -> int;
+  [[nodiscard]] auto getLongOr(StringRef key, long value) noexcept(false) -> long;
+  [[nodiscard]] auto getFloatOr(StringRef key, float value) noexcept(false) -> float;
+  [[nodiscard]] auto getDoubleOr(StringRef key, double value) noexcept(false) -> double;
+  [[nodiscard]] auto getBooleanOr(StringRef key, bool value) noexcept(false) -> bool;
+
+  auto markAsIntegral(StringRef key) noexcept(false) -> void;
+  auto markAsComposite(StringRef key) noexcept(false) -> void;
+  [[nodiscard]] auto isIntegral(StringRef key) const noexcept(false) -> bool;
+  [[nodiscard]] auto isComposite(StringRef key) const noexcept(false) -> bool;
+
+  template <typename Convertible> [[nodiscard]] auto getStringOr(StringRef key, Convertible&& value) noexcept(false)
+      -> cds::String const&;
+  template <typename Convertible> [[nodiscard]] auto getArrayOr(StringRef key, Convertible&& value) noexcept(false)
+      -> cds::json::JsonArray const&;
+  template <typename Convertible> [[nodiscard]] auto getJsonOr(StringRef key, Convertible&& value) noexcept(false)
+      -> cds::json::JsonObject const&;
+
   template <typename Type> auto put(StringRef key, Type&& value) noexcept(false) -> Registry&;
   template <typename Type> auto replace(StringRef key, Type&& value) noexcept(false) -> Registry&;
 
@@ -51,14 +69,16 @@ public:
 private:
   static auto sub(StringRef& key) noexcept -> StringRef;
   static auto replaceIfMissing(cds::json::JsonObject* pJson, StringRef key, bool overwriteType = false) noexcept
-      -> void;
+      -> bool;
+  static auto get(auto& json, StringRef key) noexcept(false) -> auto&;
 
   bool _loaded = false;
   cds::json::JsonObject _active;
   cds::json::JsonObject _stored;
   cds::UniquePointer<AsyncRunner<void, cds::json::JsonObject*, cds::json::JsonObject*>> const _loader;
-  cds::UniquePointer<AsyncRunner<void, cds::filesystem::Path, cds::json::JsonObject const*>> const _saver;
-  static constexpr cds::StringView const pathInternalPrefix = "__resourcepath__";
+  cds::UniquePointer<
+      AsyncRunner<void, cds::Array<StringRef>, cds::filesystem::Path, cds::json::JsonObject const*>> const _saver;
+  cds::Array<cds::String> _integralPaths;
   static inline cds::UniquePointer<Registry> _registry = nullptr;
 };
 
@@ -93,6 +113,48 @@ template <typename Type> auto Registry::replace(StringRef key, Type&& value) noe
 
   return *this;
 }
-} // namespace age::visualizer::settings
 
-#endif // AGE_SETTINGS_REGISTRY_HPP
+inline auto Registry::get(auto& json, StringRef key) noexcept(false) -> auto& {
+  auto current = &json;
+  auto subKey = sub(key);
+  while (key) {
+    current = &current->getJson(subKey);
+    subKey = sub(key);
+  }
+
+  return current->get(subKey);
+}
+
+template <typename Convertible> auto Registry::getStringOr(StringRef key, Convertible&& value) noexcept(false)
+    -> cds::String const& {
+  // TODO: This can be improved to partially search and then fill.
+  try {
+    return get(_active, key).getString();
+  } catch (cds::KeyException const&) {
+    put(key, std::forward<Convertible>(value));
+    return get(_active, key).getString();
+  }
+}
+
+template <typename Convertible> auto Registry::getArrayOr(StringRef key, Convertible&& value) noexcept(false)
+    -> cds::json::JsonArray const& {
+  // TODO: This can be improved to partially search and then fill.
+  try {
+    return get(_active, key).getArray();
+  } catch (cds::KeyException const&) {
+    put(key, std::forward<Convertible>(value));
+    return get(_active, key).getArray();
+  }
+}
+
+template <typename Convertible> auto Registry::getJsonOr(StringRef key, Convertible&& value) noexcept(false)
+    -> cds::json::JsonObject const& {
+  // TODO: This can be improved to partially search and then fill.
+  try {
+    return get(_active, key).getJson();
+  } catch (cds::KeyException const&) {
+    put(key, std::forward<Convertible>(value));
+    return get(_active, key).getJson();
+  }
+}
+} // namespace age::visualizer::settings

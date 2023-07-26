@@ -1,0 +1,18 @@
+//
+// Created by Vlad-Andrei Loghin on 12.07.23.
+//
+
+#pragma once
+
+#include <QWidget>
+struct QAction;
+struct QMenu : QWidget {
+  QMenu(QWidget* parent = nullptr) :
+      QWidget(parent) {}
+  QMenu(char const*, QWidget* parent = nullptr) :
+      QWidget(parent) {}
+
+  auto addSeparator() {}
+  auto addMenu(QMenu*) noexcept {}
+  auto addAction(QAction*) noexcept {}
+};

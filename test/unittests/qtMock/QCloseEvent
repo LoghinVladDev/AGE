@@ -1,0 +1,7 @@
+//
+// Created by Vlad-Andrei Loghin on 10.07.23.
+//
+
+#pragma once
+
+struct QCloseEvent {};

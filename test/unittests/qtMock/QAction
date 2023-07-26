@@ -1,0 +1,12 @@
+//
+// Created by Vlad-Andrei Loghin on 26.07.23.
+//
+
+#pragma once
+
+#include <QObject>
+struct QAction : QObject {
+public:
+  QAction(char const*, QObject* parent = nullptr) noexcept :
+      QObject(parent) {}
+};

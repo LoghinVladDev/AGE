@@ -59,7 +59,9 @@ public:
       return {};
     }
 
-    auto return_void() noexcept -> void {}
+    auto return_void() noexcept -> void {
+      // empty on purpose
+    }
 
     T _value;
     std::exception_ptr _exception;
