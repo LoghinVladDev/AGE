@@ -5,13 +5,14 @@
 #pragma once
 
 #include <QWidget>
-#include <QMenu>
-#include <QAction>
-struct QMenuBar : QWidget {
-  QMenuBar(QWidget* parent = nullptr) :
+struct QAction;
+struct QMenu : QWidget {
+  QMenu(QWidget* parent = nullptr) :
+      QWidget(parent) {}
+  QMenu(char const*, QWidget* parent = nullptr) :
       QWidget(parent) {}
 
-  auto addSeparator(){}
+  auto addSeparator() {}
   auto addMenu(QMenu*) noexcept {}
   auto addAction(QAction*) noexcept {}
 };

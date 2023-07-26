@@ -8,10 +8,11 @@
 #include <QPoint>
 #include <QSize>
 #include <QLayout>
+#include <QObject>
 
 struct QCloseEvent;
 
-struct QWidget {
+struct QWidget : QObject {
   auto resize(int, int) noexcept -> void {}
   auto move(int, int) noexcept -> void {}
   auto show() noexcept -> void {}
