@@ -16,7 +16,7 @@ class GraphPanel : public QWidget {
   Q_OBJECT
 public:
   explicit GraphPanel(QWidget* pParent = nullptr) noexcept;
-  ~GraphPanel() noexcept override;
+  ~GraphPanel() noexcept override = default;
 
 protected:
   void mousePressEvent(QMouseEvent* pEvent) override;

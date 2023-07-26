@@ -14,9 +14,4 @@ void GraphPanel::mousePressEvent(QMouseEvent* pEvent) {
   _vertexList.pushBack(std::move(vertex));
 }
 
-GraphPanel::~GraphPanel() noexcept {
-  for (auto& e : _vertexList) {
-    e.release();
-  }
-}
 } // namespace age::visualizer
