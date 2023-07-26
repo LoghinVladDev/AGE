@@ -21,6 +21,7 @@ public:
 
 private:
   cds::UniquePointer<QLayout> _primaryLayout {nullptr};
+  cds::UniquePointer<GraphPanel> _graphPanel {nullptr};
 };
 } // namespace age::visualizer
 

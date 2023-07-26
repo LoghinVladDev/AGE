@@ -9,7 +9,14 @@ GraphPanel::GraphPanel(QWidget* pParent) noexcept : QWidget(pParent) {}
 
 void GraphPanel::mousePressEvent(QMouseEvent* pEvent) {
   auto mousePos = pEvent->position();
-  auto vertex = new Vertex((int) mousePos.x(), (int) mousePos.y(), this);
+  cds::UniquePointer<Vertex> vertex = cds::makeUnique<Vertex>((int) mousePos.x(), (int) mousePos.y(), this);
   vertex->show();
+  _vertexList.pushBack(std::move(vertex));
+}
+
+GraphPanel::~GraphPanel() noexcept {
+  for (auto& e : _vertexList) {
+    e.release();
+  }
 }
 } // namespace age::visualizer
