@@ -5,10 +5,10 @@
 #pragma once
 
 #include <QCommon>
-#include <QPoint>
+#include <QPointF>
 
 struct QMouseEvent {
 public:
-  QPointF position() const {return {0, 0};}
+  auto position() const -> QPointF {return {0.0, 0.0};}
 };
 

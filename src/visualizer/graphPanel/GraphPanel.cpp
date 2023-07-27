@@ -4,13 +4,15 @@
 
 #include "GraphPanel.hpp"
 
-namespace age::visualizer {
+namespace {
+using cds::UniquePointer;
+using namespace age::visualizer;
+} // namespace
+
 GraphPanel::GraphPanel(QWidget* pParent) noexcept : QWidget(pParent) {}
 
-void GraphPanel::mousePressEvent(QMouseEvent* pEvent) {
-  GraphPanel::mousePressEvent(pEvent);
+auto GraphPanel::mousePressEvent(QMouseEvent* pEvent) -> void {
+  QWidget::mousePressEvent(pEvent);
   auto mousePos = pEvent->position();
-_vertexList.pushBack(cds::makeUnique<Vertex>(mousePos.x(), mousePos.y(), this))->show();
+  _vertexList.pushBack(cds::makeUnique<Vertex>(mousePos.x(), mousePos.y(), this))->show();
 }
-
-} // namespace age::visualizer

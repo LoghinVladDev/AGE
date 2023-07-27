@@ -18,7 +18,7 @@ public:
   ~GraphPanel() noexcept override = default;
 
 protected:
-  void mousePressEvent(QMouseEvent* pEvent) override;
+  auto mousePressEvent(QMouseEvent* pEvent) -> void override;
 
 private:
   cds::LinkedList<cds::UniquePointer<Vertex>> _vertexList;

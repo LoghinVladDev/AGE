@@ -17,7 +17,7 @@ struct QWidget : QPaintDevice {
   auto show() noexcept -> void {}
   explicit QWidget(QWidget* = nullptr) {}
   virtual ~QWidget() noexcept = default;
-  virtual void mousePressEvent(QMouseEvent*) {};
+  virtual auto mousePressEvent(QMouseEvent*) -> void {};
   auto move(int, int) noexcept -> void {}
   virtual auto paintEvent(QPaintEvent*) -> void {}
   auto setPalette(QPalette const &) -> void {}

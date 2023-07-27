@@ -14,8 +14,8 @@ public:
   explicit Vertex(int x, int y, QWidget* pParent) noexcept;
 
 protected:
-  void mousePressEvent(QMouseEvent* pEvent) override;
-  void paintEvent(QPaintEvent* pEvent) override;
+  auto mousePressEvent(QMouseEvent* pEvent) -> void override;
+  auto paintEvent(QPaintEvent* pEvent) -> void override;
 
 private:
   static constexpr int VERTEX_RADIUS = 30;

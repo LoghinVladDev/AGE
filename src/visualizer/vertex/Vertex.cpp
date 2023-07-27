@@ -11,11 +11,11 @@ Vertex::Vertex(int x, int y, QWidget* pParent) noexcept : QWidget(pParent) {
   setPalette(Qt::blue);
 }
 
-void Vertex::paintEvent(QPaintEvent*) {
+auto Vertex::paintEvent(QPaintEvent*) -> void {
   QPainter painter(this);
   painter.setPen(palette().color(backgroundRole()));
   painter.drawEllipse(0, 0, VERTEX_RADIUS, VERTEX_RADIUS);
 }
 
-void Vertex::mousePressEvent(QMouseEvent*) { setPalette(Qt::red); }
+auto Vertex::mousePressEvent(QMouseEvent*) -> void { setPalette(Qt::red); }
 } // namespace age::visualizer
