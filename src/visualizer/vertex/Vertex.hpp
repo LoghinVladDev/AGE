@@ -22,5 +22,3 @@ private:
   static constexpr int RESIZE_OFFSET = 2;
 };
 } // namespace age::visualizer
-
-

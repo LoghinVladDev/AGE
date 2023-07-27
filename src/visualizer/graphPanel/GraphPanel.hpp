@@ -24,4 +24,3 @@ private:
   cds::LinkedList<cds::UniquePointer<Vertex>> _vertexList;
 };
 } // namespace age::visualizer
-
