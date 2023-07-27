@@ -1,0 +1,14 @@
+//
+// Created by Vlad-Andrei Loghin on 18.06.23.
+//
+
+#pragma once
+
+#include <QCommon>
+#include <QPointF>
+
+struct QMouseEvent {
+public:
+  auto position() const -> QPointF {return {0.0, 0.0};}
+};
+

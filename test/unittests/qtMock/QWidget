@@ -6,12 +6,26 @@
 #define AGE_MOCK_QWIDGET
 
 #include <QCommon>
+#include <QMouseEvent>
+#include <QPaintDevice>
+#include <QPalette>
 
-struct QWidget {
+struct QPaintEvent;
+
+struct QWidget : QPaintDevice {
   auto resize(int, int) noexcept -> void {}
   auto show() noexcept -> void {}
   explicit QWidget(QWidget* = nullptr) {}
   virtual ~QWidget() noexcept = default;
+  virtual auto mousePressEvent(QMouseEvent*) -> void {};
+  auto move(int, int) noexcept -> void {}
+  virtual auto paintEvent(QPaintEvent*) -> void {}
+  auto setPalette(QPalette const &) -> void {}
+  auto palette() -> QPalette const & { return _defaultPalette; }
+  auto backgroundRole() -> QPalette::ColorRole { return QPalette::_unused; }
+
+private:
+  static inline QPalette _defaultPalette;
 };
 
 #endif // AGE_MOCK_QWIDGET

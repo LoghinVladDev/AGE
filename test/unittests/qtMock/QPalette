@@ -1,0 +1,14 @@
+//
+// Created by stefan on 24.07.2023.
+//
+#pragma once
+
+#include <QCore>
+
+struct QPalette {
+
+  enum ColorRole { _unused };
+  QPalette() = default;
+  QPalette(Qt::QColor) {}
+  auto color(ColorRole) const { return Qt::blue; }
+};

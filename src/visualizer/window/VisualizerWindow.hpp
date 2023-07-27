@@ -8,7 +8,9 @@
 #include <CDS/memory/UniquePointer>
 
 #include <QLayout>
+#include <QMouseEvent>
 #include <QWidget>
+#include <graphPanel/GraphPanel.hpp>
 
 namespace age::visualizer {
 class VisualizerWindow : public QWidget {
@@ -19,6 +21,7 @@ public:
 
 private:
   cds::UniquePointer<QLayout> _primaryLayout {nullptr};
+  cds::UniquePointer<GraphPanel> _graphPanel {nullptr};
 };
 } // namespace age::visualizer
 
