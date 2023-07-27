@@ -2,8 +2,7 @@
 // Created by stefan on 21.07.2023.
 //
 
-#ifndef AGE_VERTEX_HPP
-#define AGE_VERTEX_HPP
+#pragma once
 
 #include <QPainter>
 #include <QWidget>
@@ -15,8 +14,8 @@ public:
   explicit Vertex(int x, int y, QWidget* pParent) noexcept;
 
 protected:
-  void mousePressEvent(QMouseEvent*) override;
-  void paintEvent(QPaintEvent*) override;
+  void mousePressEvent(QMouseEvent* pEvent) override;
+  void paintEvent(QPaintEvent* pEvent) override;
 
 private:
   static constexpr int VERTEX_RADIUS = 30;
@@ -25,4 +24,3 @@ private:
 } // namespace age::visualizer
 
 
-#endif //AGE_VERTEX_HPP

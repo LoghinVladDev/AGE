@@ -2,15 +2,13 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_MOCK_QMOUSEEVENT
-#define AGE_MOCK_QMOUSEEVENT
+#pragma once
 
 #include <QCommon>
 #include <QPoint>
 
 struct QMouseEvent {
 public:
-  QPoint position() const {return {0, 0};}
+  QPointF position() const {return {0, 0};}
 };
 
-#endif // AGE_MOCK_QMOUSEEVENT

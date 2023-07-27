@@ -2,8 +2,7 @@
 // Created by stefan on 23.07.2023.
 //
 
-#ifndef AGE_GRAPH_PANEL_HPP
-#define AGE_GRAPH_PANEL_HPP
+#pragma once
 
 #include <CDS/LinkedList>
 #include <CDS/memory/UniquePointer>
@@ -26,4 +25,3 @@ private:
 };
 } // namespace age::visualizer
 
-#endif //AGE_GRAPH_PANEL_HPP

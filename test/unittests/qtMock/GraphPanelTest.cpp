@@ -12,7 +12,7 @@ using age::visualizer::GraphPanel;
 TEST(GraphPanelTest, construction) { GraphPanel g; }
 
 struct TestGraphPanel : GraphPanel {
-  void mousePressEvent(QMouseEvent* pEvent) override { this->GraphPanel::mousePressEvent(pEvent); };
+  void mousePressEvent(QMouseEvent* pEvent) override { this->GraphPanel::mousePressEvent(pEvent); }
 };
 TEST(GraphPanelTest, mousePressEvent) {
   TestGraphPanel t;

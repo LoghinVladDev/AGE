@@ -8,10 +8,9 @@ namespace age::visualizer {
 GraphPanel::GraphPanel(QWidget* pParent) noexcept : QWidget(pParent) {}
 
 void GraphPanel::mousePressEvent(QMouseEvent* pEvent) {
+  GraphPanel::mousePressEvent(pEvent);
   auto mousePos = pEvent->position();
-  cds::UniquePointer<Vertex> vertex = cds::makeUnique<Vertex>((int) mousePos.x(), (int) mousePos.y(), this);
-  vertex->show();
-  _vertexList.pushBack(std::move(vertex));
+_vertexList.pushBack(cds::makeUnique<Vertex>(mousePos.x(), mousePos.y(), this))->show();
 }
 
 } // namespace age::visualizer
