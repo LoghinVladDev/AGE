@@ -25,7 +25,7 @@ public:
   template <cds::Size size> explicit(false) ArrayRef(std::array<T, size>& array) noexcept;
   template <cds::Size size> explicit(false) ArrayRef(T (&array)[size]) noexcept;
   template <meta::concepts::RandomAccessIterator Iterator> ArrayRef(Iterator&& begin, Iterator&& end) noexcept;
-  template <meta::concepts::RandomAccessIterable Iterable> ArrayRef(Iterable&& iterable) noexcept;
+  template <meta::concepts::RandomAccessIterable Iterable> requires !SameAs<Iterable, ArrayRef> ArrayRef(Iterable&& iterable) noexcept;
 
   auto operator=(ArrayRef const&) noexcept -> ArrayRef& = default;
   auto operator=(ArrayRef&&) noexcept -> ArrayRef& = default;
@@ -35,7 +35,7 @@ public:
   template <cds::Size size> auto operator=(T (&array)[size]) noexcept -> ArrayRef&;
   template <cds::Size size> auto operator=(cds::StaticArray<T, size>& array) noexcept -> ArrayRef&;
   template <cds::Size size> auto operator=(std::array<T, size>& array) noexcept -> ArrayRef&;
-  template <meta::concepts::RandomAccessIterable Iterable> auto operator=(Iterable&& iterable) noexcept -> ArrayRef&;
+  template <meta::concepts::RandomAccessIterable Iterable> requires !SameAs<Iterable, ArrayRef> auto operator=(Iterable&& iterable) noexcept -> ArrayRef&;
 
   [[nodiscard]] explicit operator bool() const noexcept;
 
@@ -82,7 +82,7 @@ template <typename T> template <cds::Size size> ArrayRef<T>::ArrayRef(std::array
 template <typename T> template <cds::Size size> ArrayRef<T>::ArrayRef(T (&array)[size]) noexcept :
     ArrayRef(array, size) {}
 
-template <typename T> template <meta::concepts::RandomAccessIterator Iterator>
+template <typename T> template <meta::concepts::RandomAccessIterable Iterable> requires !SameAs<Iterable, ArrayRef>
 ArrayRef<T>::ArrayRef(Iterator&& begin, Iterator&& end) noexcept :
     ArrayRef(&std::forward<Iterator>(begin)[0u], std::forward<Iterator>(end) - std::forward<Iterator>(begin)) {}
 
@@ -122,7 +122,7 @@ template <typename T> template <cds::Size size> auto ArrayRef<T>::operator=(std:
   return *this;
 }
 
-template <typename T> template <meta::concepts::RandomAccessIterable Iterable>
+template <typename T> template <meta::concepts::RandomAccessIterable Iterable> requires !SameAs<Iterable, ArrayRef>
 auto ArrayRef<T>::operator=(Iterable&& iterable) noexcept -> ArrayRef& {
   _buffer = &std::forward<Iterable>(iterable.begin())[0u];
   _size = std::forward<Iterable>(iterable).end() - std::forward<Iterable>(iterable).begin();

@@ -13,6 +13,7 @@ jobs:
     env:
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
       TARGETS: |
+        meta_tests \
         unit_tests \
         visualizer \
         visualizer_mock

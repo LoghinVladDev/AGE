@@ -69,19 +69,19 @@ concept RandomAccessIterator =
     };
 
 template <typename T>
-concept ForwardIterable = requires(T obj) {
+concept ForwardIterable = requires(T const& obj) {
   { obj.begin() } -> ForwardIterator;
   { obj.end() } -> ForwardIterator;
 };
 
 template <typename T>
-concept BidirectionalIterable = requires(T obj) {
+concept BidirectionalIterable = requires(T const& obj) {
   { obj.begin() } -> BidirectionalIterator;
   { obj.end() } -> BidirectionalIterator;
 };
 
 template <typename T>
-concept RandomAccessIterable = requires(T obj) {
+concept RandomAccessIterable = requires(T const& obj) {
   { obj.begin() } -> RandomAccessIterator;
   { obj.end() } -> RandomAccessIterator;
 };
