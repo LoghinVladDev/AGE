@@ -25,7 +25,7 @@ set(
 
 set(
     UNIT_TEST_SOURCES
-        ArrayRefTest.cpp
+    ArrayRefTest.cpp
     AsyncRunnerTest.cpp
     DummyTest.cpp
     GeneratorTest.cpp
