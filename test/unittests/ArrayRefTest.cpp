@@ -20,10 +20,17 @@ TEST(ArrayRefTest, construction) {
   auto fromStdVector = ref(baseStdVector);
 
   auto baseStdArray = std::array<int, 5> {1, 5, 4, 2, 3};
-  auto fromStdArray = ref(baseStdArray);
+  auto fromStdArray = age::ref(baseStdArray); // lookup calls std::ref ???
 
   int baseCArray[5] = {1, 5, 4, 2, 3};
   auto fromCArray = ArrayRef(baseCArray, 5);
 
   ArrayRef fromInitializerList = {1, 5, 4, 2, 3};
+
+  std::initializer_list<int> cList = {1, 5, 4, 2, 3};
+  ASSERT_EQ(fromCdsArray, cList);
+  ASSERT_EQ(fromCdsSArray, cList);
+  ASSERT_EQ(fromStdVector, cList);
+  ASSERT_EQ(fromStdArray, cList);
+  ASSERT_EQ(fromCArray, cList);
 }

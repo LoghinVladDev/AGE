@@ -22,7 +22,7 @@ public:
   explicit(false) ArrayRef(std::vector<T>& array) noexcept;
   explicit(false) ArrayRef(T* buffer, cds::Size length) noexcept;
   template <cds::Size size> explicit(false) ArrayRef(cds::StaticArray<T, size>& array) noexcept;
-  template <cds::Size size> explicit(false) ArrayRef(std::array<T, size>& array) noexcept;
+  template <std::size_t size> explicit(false) ArrayRef(std::array<T, size>& array) noexcept;
   template <cds::Size size> explicit(false) ArrayRef(T (&array)[size]) noexcept;
   ArrayRef(std::initializer_list<T> const& list) noexcept
     requires meta::concepts::ConstQualified<T>
@@ -43,7 +43,7 @@ public:
   auto operator=(std::vector<T>& array) noexcept -> ArrayRef&;
   template <cds::Size size> auto operator=(T (&array)[size]) noexcept -> ArrayRef&;
   template <cds::Size size> auto operator=(cds::StaticArray<T, size>& array) noexcept -> ArrayRef&;
-  template <cds::Size size> auto operator=(std::array<T, size>& array) noexcept -> ArrayRef&;
+  template <std::size_t size> auto operator=(std::array<T, size>& array) noexcept -> ArrayRef&;
 
   template <meta::concepts::RandomAccessIterable Iterable>
     requires(!cds::meta::IsSame<Iterable, ArrayRef<T>>::value)
@@ -75,15 +75,31 @@ public:
   [[nodiscard]] constexpr auto cbegin() const noexcept -> T const* { return _buffer; }
   [[nodiscard]] constexpr auto cend() const noexcept -> T const* { return _buffer + _size; }
 
+  [[nodiscard]] constexpr auto operator==(std::initializer_list<T> const& list) const noexcept {
+    return equal(list.begin(), list.end());
+  }
+
+  template <meta::concepts::ForwardIterator Iterator, meta::concepts::SentinelFor<Iterator> Sentinel>
+  [[nodiscard]] constexpr auto equal(Iterator iterator, Sentinel const& sentinel) const noexcept {
+    auto lIt = _buffer;
+    auto lEnd = _buffer + _size;
+    for (; lIt != lEnd && iterator != sentinel; ++lIt, ++iterator) {
+      if (!cds::meta::equals(*lIt, *iterator)) {
+        return false;
+      }
+    }
+    return lIt == lEnd && iterator == sentinel;
+  }
+
 private:
   T* _buffer {nullptr};
   cds::Size _size {0u};
 };
 
-template <typename T> auto ref(cds::Array<T>& array) noexcept { return ArrayRef<T>(array); }
-template <typename T> auto ref(std::vector<T>& array) noexcept { return ArrayRef<T>(array); }
-template <typename T, cds::Size size> auto ref(cds::StaticArray<T, size>& array) noexcept { return ArrayRef<T>(array); }
-template <typename T, cds::Size size> auto ref(std::array<T, size>& array) noexcept { return ArrayRef<T>(array); }
+template <typename T> auto ref(cds::Array<T>& array) noexcept { return ArrayRef(array); }
+template <typename T> auto ref(std::vector<T>& array) noexcept { return ArrayRef(array); }
+template <typename T, cds::Size size> auto ref(cds::StaticArray<T, size>& array) noexcept { return ArrayRef(array); }
+template <typename T, std::size_t size> auto ref(std::array<T, size>& array) noexcept { return ArrayRef(array); }
 
 template <typename T> ArrayRef<T>::ArrayRef(cds::Array<T>& array) noexcept : ArrayRef(array.data(), array.size()) {}
 template <typename T> ArrayRef<T>::ArrayRef(std::vector<T>& array) noexcept : ArrayRef(array.data(), array.size()) {}
@@ -92,7 +108,7 @@ template <typename T> ArrayRef<T>::ArrayRef(T* buffer, cds::Size length) noexcep
 template <typename T> template <cds::Size size> ArrayRef<T>::ArrayRef(cds::StaticArray<T, size>& array) noexcept :
     ArrayRef(array.data(), array.size()) {}
 
-template <typename T> template <cds::Size size> ArrayRef<T>::ArrayRef(std::array<T, size>& array) noexcept :
+template <typename T> template <std::size_t size> ArrayRef<T>::ArrayRef(std::array<T, size>& array) noexcept :
     ArrayRef(array.data(), array.size()) {}
 
 template <typename T> template <cds::Size size> ArrayRef<T>::ArrayRef(T (&array)[size]) noexcept :
@@ -123,7 +139,7 @@ template <typename T> template <cds::Size size> auto ArrayRef<T>::operator=(cds:
   return *this;
 }
 
-template <typename T> template <cds::Size size> auto ArrayRef<T>::operator=(std::array<T, size>& array) noexcept
+template <typename T> template <std::size_t size> auto ArrayRef<T>::operator=(std::array<T, size>& array) noexcept
     -> ArrayRef& {
   _buffer = array.data();
   _size = array.size();
