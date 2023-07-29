@@ -605,6 +605,13 @@ consteval auto randomAccessIterableTest() {
   static_assert(!RandomAccessIterable<std::unordered_map<int, int>>);
 }
 
+consteval auto constQualifiedTest() {
+  static_assert(ConstQualified<int const>);
+  static_assert(!ConstQualified<int>);
+  static_assert(ConstQualified<int* const>);
+  static_assert(!ConstQualified<int const*>);
+}
+
 void f() {
   isSameTest();
   dereferenceableTest();

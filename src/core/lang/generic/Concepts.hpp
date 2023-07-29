@@ -85,4 +85,7 @@ concept RandomAccessIterable = requires(T const& obj) {
   { obj.begin() } -> RandomAccessIterator;
   { obj.end() } -> RandomAccessIterator;
 };
+
+template <typename T>
+concept ConstQualified = cds::meta::IsConst<T>::value;
 } // namespace age::meta::concepts

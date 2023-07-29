@@ -24,10 +24,17 @@ public:
   template <cds::Size size> explicit(false) ArrayRef(cds::StaticArray<T, size>& array) noexcept;
   template <cds::Size size> explicit(false) ArrayRef(std::array<T, size>& array) noexcept;
   template <cds::Size size> explicit(false) ArrayRef(T (&array)[size]) noexcept;
-  template <meta::concepts::RandomAccessIterator Iterator> ArrayRef(Iterator&& begin, Iterator&& end) noexcept;
+  ArrayRef(std::initializer_list<T> const& list) noexcept
+    requires meta::concepts::ConstQualified<T>
+      : ArrayRef(list.begin(), list.end()) {}
+
+  template <meta::concepts::RandomAccessIterator Iterator> ArrayRef(Iterator&& begin, Iterator&& end) noexcept :
+      ArrayRef(&std::forward<Iterator>(begin)[0u], std::forward<Iterator>(end) - std::forward<Iterator>(begin)) {}
+
   template <meta::concepts::RandomAccessIterable Iterable>
-    requires !SameAs<Iterable, ArrayRef>
-             ArrayRef(Iterable && iterable) noexcept;
+    requires(!cds::meta::IsSame<Iterable, ArrayRef<T>>::value)
+  ArrayRef(Iterable&& iterable) noexcept :
+      ArrayRef(std::forward<Iterable>(iterable).begin(), std::forward<Iterable>(iterable).end()) {}
 
   auto operator=(ArrayRef const&) noexcept -> ArrayRef& = default;
   auto operator=(ArrayRef&&) noexcept -> ArrayRef& = default;
@@ -37,9 +44,14 @@ public:
   template <cds::Size size> auto operator=(T (&array)[size]) noexcept -> ArrayRef&;
   template <cds::Size size> auto operator=(cds::StaticArray<T, size>& array) noexcept -> ArrayRef&;
   template <cds::Size size> auto operator=(std::array<T, size>& array) noexcept -> ArrayRef&;
+
   template <meta::concepts::RandomAccessIterable Iterable>
-    requires !SameAs<Iterable, ArrayRef>
-             auto operator=(Iterable&& iterable) noexcept -> ArrayRef&;
+    requires(!cds::meta::IsSame<Iterable, ArrayRef<T>>::value)
+  auto operator=(Iterable&& iterable) noexcept -> ArrayRef& {
+    _buffer = &std::forward<Iterable>(iterable.begin())[0u];
+    _size = std::forward<Iterable>(iterable).end() - std::forward<Iterable>(iterable).begin();
+    return *this;
+  }
 
   [[nodiscard]] explicit operator bool() const noexcept;
 
@@ -86,15 +98,6 @@ template <typename T> template <cds::Size size> ArrayRef<T>::ArrayRef(std::array
 template <typename T> template <cds::Size size> ArrayRef<T>::ArrayRef(T (&array)[size]) noexcept :
     ArrayRef(array, size) {}
 
-template <typename T> template <meta::concepts::RandomAccessIterator Iterator>
-ArrayRef<T>::ArrayRef(Iterator&& begin, Iterator&& end) noexcept :
-    ArrayRef(&std::forward<Iterator>(begin)[0u], std::forward<Iterator>(end) - std::forward<Iterator>(begin)) {}
-
-template <typename T> template <meta::concepts::RandomAccessIterable Iterable>
-  requires !SameAs<Iterable, ArrayRef>
-           ArrayRef<T>::ArrayRef(Iterable && iterable) noexcept :
-    ArrayRef(std::forward<Iterable>(iterable).begin(), std::forward<Iterable>(iterable).end()) {}
-
 template <typename T> auto ArrayRef<T>::operator=(cds::Array<T>& array) noexcept -> ArrayRef& {
   _buffer = array.data();
   _size = array.size();
@@ -124,14 +127,6 @@ template <typename T> template <cds::Size size> auto ArrayRef<T>::operator=(std:
     -> ArrayRef& {
   _buffer = array.data();
   _size = array.size();
-  return *this;
-}
-
-template <typename T> template <meta::concepts::RandomAccessIterable Iterable>
-  requires !SameAs<Iterable, ArrayRef>
-           auto ArrayRef<T>::operator=(Iterable&& iterable) noexcept -> ArrayRef& {
-  _buffer = &std::forward<Iterable>(iterable.begin())[0u];
-  _size = std::forward<Iterable>(iterable).end() - std::forward<Iterable>(iterable).begin();
   return *this;
 }
 
@@ -169,4 +164,15 @@ template <typename T> auto ArrayRef<T>::dropBack(cds::Size amount) const noexcep
   }
   return {data(), size() - amount};
 }
+
+template <typename T> ArrayRef(cds::Array<T>&) -> ArrayRef<T>;
+template <typename T> ArrayRef(std::vector<T>&) -> ArrayRef<T>;
+template <typename T, cds::Size size> ArrayRef(cds::StaticArray<T, size>&) -> ArrayRef<T>;
+template <typename T, cds::Size size> ArrayRef(std::array<T, size>&) -> ArrayRef<T>;
+
+template <typename T> ArrayRef(cds::Array<T> const&) -> ArrayRef<T const>;
+template <typename T> ArrayRef(std::vector<T> const&) -> ArrayRef<T const>;
+template <typename T, cds::Size size> ArrayRef(cds::StaticArray<T, size> const&) -> ArrayRef<T const>;
+template <typename T, cds::Size size> ArrayRef(std::array<T, size> const&) -> ArrayRef<T const>;
+template <typename T> ArrayRef(std::initializer_list<T>) -> ArrayRef<T const>;
 } // namespace age
