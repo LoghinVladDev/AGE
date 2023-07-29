@@ -14,6 +14,11 @@
 namespace age {
 template <typename T> class ArrayRef {
 public:
+  using Iterator = T*;
+  using ConstIterator = T const*;
+  using ReverseIterator = cds::BackwardAddressIterator<T>;
+  using ConstReverseIterator = cds::BackwardAddressIterator<T const>;
+
   ArrayRef() noexcept = default;
   ArrayRef(ArrayRef const&) noexcept = default;
   ArrayRef(ArrayRef&&) noexcept = default;
@@ -24,9 +29,6 @@ public:
   template <cds::Size size> explicit(false) ArrayRef(cds::StaticArray<T, size>& array) noexcept;
   template <std::size_t size> explicit(false) ArrayRef(std::array<T, size>& array) noexcept;
   template <cds::Size size> explicit(false) ArrayRef(T (&array)[size]) noexcept;
-  ArrayRef(std::initializer_list<T> const& list) noexcept
-    requires meta::concepts::ConstQualified<T>
-      : ArrayRef(list.begin(), list.end()) {}
 
   template <meta::concepts::RandomAccessIterator Iterator> ArrayRef(Iterator&& begin, Iterator&& end) noexcept :
       ArrayRef(&std::forward<Iterator>(begin)[0u], std::forward<Iterator>(end) - std::forward<Iterator>(begin)) {}
@@ -40,15 +42,13 @@ public:
   auto operator=(ArrayRef&&) noexcept -> ArrayRef& = default;
 
   auto operator=(cds::Array<T>& array) noexcept -> ArrayRef&;
-  auto operator=(std::vector<T>& array) noexcept -> ArrayRef&;
   template <cds::Size size> auto operator=(T (&array)[size]) noexcept -> ArrayRef&;
   template <cds::Size size> auto operator=(cds::StaticArray<T, size>& array) noexcept -> ArrayRef&;
-  template <std::size_t size> auto operator=(std::array<T, size>& array) noexcept -> ArrayRef&;
 
   template <meta::concepts::RandomAccessIterable Iterable>
     requires(!cds::meta::IsSame<Iterable, ArrayRef<T>>::value)
   auto operator=(Iterable&& iterable) noexcept -> ArrayRef& {
-    _buffer = &std::forward<Iterable>(iterable.begin())[0u];
+    _buffer = &std::forward<Iterable>(iterable).begin()[0u];
     _size = std::forward<Iterable>(iterable).end() - std::forward<Iterable>(iterable).begin();
     return *this;
   }
@@ -56,11 +56,14 @@ public:
   [[nodiscard]] explicit operator bool() const noexcept;
 
   auto clear() noexcept -> void;
-  [[nodiscard]] auto takeFront(cds::Size amount) const noexcept -> ArrayRef;
-  [[nodiscard]] auto takeBack(cds::Size amount) const noexcept -> ArrayRef;
-  [[nodiscard]] auto dropFront(cds::Size amount) const noexcept -> ArrayRef;
-  [[nodiscard]] auto dropBack(cds::Size amount) const noexcept -> ArrayRef;
-  auto shrink(cds::Size amount) noexcept -> ArrayRef&;
+  [[nodiscard]] auto takeFront(cds::Size amount) noexcept -> ArrayRef;
+  [[nodiscard]] auto takeBack(cds::Size amount) noexcept -> ArrayRef;
+  [[nodiscard]] auto dropFront(cds::Size amount) noexcept -> ArrayRef;
+  [[nodiscard]] auto dropBack(cds::Size amount) noexcept -> ArrayRef;
+  [[nodiscard]] auto takeFront(cds::Size amount) const noexcept -> ArrayRef<T const>;
+  [[nodiscard]] auto takeBack(cds::Size amount) const noexcept -> ArrayRef<T const>;
+  [[nodiscard]] auto dropFront(cds::Size amount) const noexcept -> ArrayRef<T const>;
+  [[nodiscard]] auto dropBack(cds::Size amount) const noexcept -> ArrayRef<T const>;
 
   [[nodiscard]] constexpr auto operator[](cds::Size index) noexcept -> T& { return data()[index]; }
   [[nodiscard]] constexpr auto operator[](cds::Size index) const noexcept -> T const& { return data()[index]; }
@@ -74,13 +77,53 @@ public:
   [[nodiscard]] constexpr auto end() noexcept -> T* { return _buffer + _size; }
   [[nodiscard]] constexpr auto cbegin() const noexcept -> T const* { return _buffer; }
   [[nodiscard]] constexpr auto cend() const noexcept -> T const* { return _buffer + _size; }
+  [[nodiscard]] constexpr auto begin() const noexcept -> T const* { return cbegin(); }
+  [[nodiscard]] constexpr auto end() const noexcept -> T const* { return cend(); }
 
-  [[nodiscard]] constexpr auto operator==(std::initializer_list<T> const& list) const noexcept {
-    return equal(list.begin(), list.end());
+  [[nodiscard]] constexpr auto rbegin() noexcept {
+    return ReverseIterator(_buffer == nullptr ? nullptr : _buffer + _size - 1);
+  }
+
+  [[nodiscard]] constexpr auto rend() noexcept { return ReverseIterator(_buffer == nullptr ? nullptr : _buffer - 1); }
+
+  [[nodiscard]] constexpr auto crbegin() const noexcept {
+    return ConstReverseIterator(_buffer == nullptr ? nullptr : _buffer + _size - 1);
+  }
+
+  [[nodiscard]] constexpr auto crend() const noexcept {
+    return ConstReverseIterator(_buffer == nullptr ? nullptr : _buffer - 1);
+  }
+
+  [[nodiscard]] constexpr auto rbegin() const noexcept { return crbegin(); }
+  [[nodiscard]] constexpr auto rend() const noexcept { return crend(); }
+
+  template <cds::Size size> [[nodiscard]] constexpr auto operator==(T const (&array)[size]) const noexcept -> bool {
+    return equal(array, array + size);
+  }
+
+  [[nodiscard]] constexpr auto operator==(ArrayRef const& array) const noexcept -> bool {
+    if (_buffer == array._buffer && _size == array._size) {
+      return true;
+    }
+
+    return equal(array.cbegin(), array.cend());
+  }
+
+  template <meta::concepts::ForwardIterable Iterable>
+    requires(!meta::concepts::RandomAccessIterable<Iterable>)
+  [[nodiscard]] constexpr auto operator==(Iterable const& iterable) const noexcept -> bool {
+    return equal(iterable.begin(), iterable.end());
+  }
+
+  template <meta::concepts::RandomAccessIterable Iterable>
+  [[nodiscard]] constexpr auto operator==(Iterable const& iterable) const noexcept -> bool {
+    auto begin = iterable.begin();
+    auto end = iterable.end();
+    return _size == end - begin && equal(begin, end);
   }
 
   template <meta::concepts::ForwardIterator Iterator, meta::concepts::SentinelFor<Iterator> Sentinel>
-  [[nodiscard]] constexpr auto equal(Iterator iterator, Sentinel const& sentinel) const noexcept {
+  [[nodiscard]] constexpr auto equal(Iterator iterator, Sentinel const& sentinel) const noexcept -> bool {
     auto lIt = _buffer;
     auto lEnd = _buffer + _size;
     for (; lIt != lEnd && iterator != sentinel; ++lIt, ++iterator) {
@@ -120,12 +163,6 @@ template <typename T> auto ArrayRef<T>::operator=(cds::Array<T>& array) noexcept
   return *this;
 }
 
-template <typename T> auto ArrayRef<T>::operator=(std::vector<T>& array) noexcept -> ArrayRef& {
-  _buffer = array.data();
-  _size = array.size();
-  return *this;
-}
-
 template <typename T> template <cds::Size size> auto ArrayRef<T>::operator=(T (&array)[size]) noexcept -> ArrayRef& {
   _buffer = array;
   _size = size;
@@ -139,13 +176,6 @@ template <typename T> template <cds::Size size> auto ArrayRef<T>::operator=(cds:
   return *this;
 }
 
-template <typename T> template <std::size_t size> auto ArrayRef<T>::operator=(std::array<T, size>& array) noexcept
-    -> ArrayRef& {
-  _buffer = array.data();
-  _size = array.size();
-  return *this;
-}
-
 template <typename T> ArrayRef<T>::operator bool() const noexcept { return !empty(); }
 
 template <typename T> auto ArrayRef<T>::clear() noexcept -> void {
@@ -153,28 +183,56 @@ template <typename T> auto ArrayRef<T>::clear() noexcept -> void {
   _size = 0u;
 }
 
-template <typename T> auto ArrayRef<T>::takeFront(cds::Size amount) const noexcept -> ArrayRef {
+template <typename T> auto ArrayRef<T>::takeFront(cds::Size amount) noexcept -> ArrayRef {
   if (amount >= size()) {
     return *this;
   }
   return {data(), amount};
 }
 
-template <typename T> auto ArrayRef<T>::takeBack(cds::Size amount) const noexcept -> ArrayRef {
+template <typename T> auto ArrayRef<T>::takeBack(cds::Size amount) noexcept -> ArrayRef {
   if (amount >= size()) {
     return *this;
   }
   return {data() + size() - amount, amount};
 }
 
-template <typename T> auto ArrayRef<T>::dropFront(cds::Size amount) const noexcept -> ArrayRef {
+template <typename T> auto ArrayRef<T>::dropFront(cds::Size amount) noexcept -> ArrayRef {
   if (amount >= size()) {
     return {};
   }
   return {data() + amount, size() - amount};
 }
 
-template <typename T> auto ArrayRef<T>::dropBack(cds::Size amount) const noexcept -> ArrayRef {
+template <typename T> auto ArrayRef<T>::dropBack(cds::Size amount) noexcept -> ArrayRef {
+  if (amount >= size()) {
+    return {};
+  }
+  return {data(), size() - amount};
+}
+
+template <typename T> auto ArrayRef<T>::takeFront(cds::Size amount) const noexcept -> ArrayRef<T const> {
+  if (amount >= size()) {
+    return *this;
+  }
+  return {data(), amount};
+}
+
+template <typename T> auto ArrayRef<T>::takeBack(cds::Size amount) const noexcept -> ArrayRef<T const> {
+  if (amount >= size()) {
+    return *this;
+  }
+  return {data() + size() - amount, amount};
+}
+
+template <typename T> auto ArrayRef<T>::dropFront(cds::Size amount) const noexcept -> ArrayRef<T const> {
+  if (amount >= size()) {
+    return {};
+  }
+  return {data() + amount, size() - amount};
+}
+
+template <typename T> auto ArrayRef<T>::dropBack(cds::Size amount) const noexcept -> ArrayRef<T const> {
   if (amount >= size()) {
     return {};
   }

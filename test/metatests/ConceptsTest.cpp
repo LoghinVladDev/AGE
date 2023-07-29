@@ -627,4 +627,5 @@ void f() {
   forwardIterableTest();
   bidirectionalIterableTest();
   randomAccessIterableTest();
+  constQualifiedTest();
 }
