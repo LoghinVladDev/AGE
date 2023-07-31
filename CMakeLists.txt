@@ -109,3 +109,4 @@ include(FetchContent)
 
 enable_testing()
 add_subdirectory(test/unittests)
+add_subdirectory(test/metatests)
