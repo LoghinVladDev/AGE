@@ -100,7 +100,7 @@ template <typename Result, typename... Args> auto AsyncRunner<Result, Args...>::
 
   prepareStop();
   _executer->join();
-  _executer.release();
+  _executer.reset();
 }
 
 template <typename Result, typename... Args> template <typename... A>
