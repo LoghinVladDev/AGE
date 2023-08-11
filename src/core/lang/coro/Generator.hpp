@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 07.07.23.
 //
 
-#ifndef AGE_GENERATOR_HPP
-#define AGE_GENERATOR_HPP
-
+#pragma once
 #include <coroutine>
 #include <exception>
 
@@ -48,8 +46,8 @@ public:
       return Generator {std::coroutine_handle<promise_type>::from_promise(*this)};
     }
 
-    auto initial_suspend() noexcept -> std::suspend_always { return {}; }
-    auto final_suspend() noexcept -> std::suspend_always { return {}; }
+    [[nodiscard]] auto initial_suspend() const noexcept -> std::suspend_always { return {}; }
+    [[nodiscard]] auto final_suspend() const noexcept -> std::suspend_always { return {}; }
     void unhandled_exception() noexcept { _exception = std::current_exception(); }
 
     template <typename From>
@@ -59,7 +57,9 @@ public:
       return {};
     }
 
-    auto return_void() noexcept -> void {}
+    auto return_void() const noexcept -> void {
+      // empty on purpose
+    }
 
     T _value;
     std::exception_ptr _exception;
@@ -89,7 +89,7 @@ public:
     return rVal;
   }
 
-  [[nodiscard]] auto end() noexcept -> DefaultSentinel { return {}; }
+  [[nodiscard]] auto end() const noexcept -> DefaultSentinel { return {}; }
 
 private:
   auto acquire() -> void {
@@ -107,5 +107,3 @@ private:
 };
 
 } // namespace age
-
-#endif // AGE_GENERATOR_HPP

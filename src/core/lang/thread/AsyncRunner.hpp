@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 06.07.23.
 //
 
-#ifndef AGE_ASYNC_RUNNER_HPP
-#define AGE_ASYNC_RUNNER_HPP
-
+#pragma once
 #include <CDS/Function>
 #include <CDS/memory/UniquePointer>
 #include <CDS/meta/Base>
@@ -13,6 +11,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <tuple>
+#include <lang/generic/Concepts.hpp>
 
 namespace age {
 namespace meta {
@@ -59,7 +58,8 @@ public:
   auto operator=(AsyncRunner const&) noexcept = delete;
   auto operator=(AsyncRunner&&) noexcept = delete;
 
-  template <typename F> explicit(false) AsyncRunner(F&& function) noexcept(false) : _fn(std::forward<F>(function)) {}
+  template <meta::concepts::DifferentFrom<AsyncRunner> F> explicit(false) AsyncRunner(F&& function) noexcept(false) :
+      _fn(std::forward<F>(function)) {}
 
   template <typename... A> auto trigger(A&&... args) noexcept(false);
   [[nodiscard]] auto notStarted() const noexcept { return !std::get<2>(_sync); }
@@ -128,5 +128,3 @@ auto AsyncRunner<Result, Args...>::trigger(A&&... args) noexcept(false) {
   condition.notify_one();
 }
 } // namespace age
-
-#endif // AGE_ASYNC_RUNNER_HPP

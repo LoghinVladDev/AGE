@@ -101,6 +101,11 @@ consteval auto isSameTest() {
   static_assert(!SameAs<int, float>);
 }
 
+consteval auto differentFromTest() {
+  static_assert(!DifferentFrom<int, int>);
+  static_assert(DifferentFrom<int, float>);
+}
+
 consteval auto dereferenceableTest() {
   struct ND{};
   struct D{public: auto operator*() {}};

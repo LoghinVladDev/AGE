@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_MOCK_QWIDGET
-#define AGE_MOCK_QWIDGET
-
+#pragma once
 #include <QCommon>
 #include <QMouseEvent>
 #include <QPaintDevice>
@@ -27,5 +25,3 @@ struct QWidget : QPaintDevice {
 private:
   static inline QPalette _defaultPalette;
 };
-
-#endif // AGE_MOCK_QWIDGET

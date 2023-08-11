@@ -26,16 +26,15 @@ using std::mutex;
 using std::tuple;
 using std::unique_lock;
 
-constexpr auto const paddingBufferSize = 128;
-constexpr char const paddingBuffer[paddingBufferSize + 1] = "                                "
-                                                            "                                "
-                                                            "                                "
-                                                            "                                ";
+constinit StringView const paddingBuffer = "                                "
+                                           "                                "
+                                           "                                "
+                                           "                                ";
 
 auto addIndent(auto& out, int indent) -> void {
   while (indent > 0) {
-    out.write(paddingBuffer, std::min(indent, paddingBufferSize));
-    indent -= paddingBufferSize;
+    out.write(paddingBuffer.data(), cds::minOf(indent, paddingBuffer.size()));
+    indent -= static_cast<int>(paddingBuffer.size());
   }
 }
 
@@ -162,7 +161,7 @@ auto convertToPath(StringRef key) noexcept -> String {
   while (key) {
     auto dotPos = key.find('.');
     if (dotPos == StringRef::npos) {
-      dotPos = key.size();
+      dotPos = static_cast<decltype(dotPos)>(key.size());
     }
 
     path += StringView(key.takeFront(dotPos));

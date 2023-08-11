@@ -2,8 +2,7 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_MOCK_QLAYOUT
-#define AGE_MOCK_QLAYOUT
+#pragma once
 
 #include <QCommon>
 
@@ -13,5 +12,3 @@ struct QLayout {
   virtual ~QLayout() noexcept = default;
   auto addWidget(QWidget*) {}
 };
-
-#endif // AGE_MOCK_QLAYOUT

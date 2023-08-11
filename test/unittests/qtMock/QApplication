@@ -2,8 +2,7 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_MOCK_QAPPLICATION
-#define AGE_MOCK_QAPPLICATION
+#pragma once
 
 #include <QCommon>
 
@@ -14,5 +13,3 @@ struct QApplication {
     return 0;
   }
 };
-
-#endif // AGE_MOCK_QAPPLICATION

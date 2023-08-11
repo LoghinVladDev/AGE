@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_VISUALIZER_WINDOW_HPP
-#define AGE_VISUALIZER_WINDOW_HPP
-
+#pragma once
 #include <CDS/memory/UniquePointer>
 
 #include <QLayout>
@@ -24,5 +22,3 @@ private:
   cds::UniquePointer<GraphPanel> _graphPanel {nullptr};
 };
 } // namespace age::visualizer
-
-#endif // AGE_VISUALIZER_WINDOW_HPP
