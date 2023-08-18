@@ -3,13 +3,15 @@
 //
 
 #pragma once
-
 #include <CDS/meta/TypeTraits>
 
 namespace age::meta::concepts {
 namespace detail {
 template <typename L, typename R>
 concept SameAs = cds::meta::IsSame<L, R>::value;
+
+template <typename L, typename R>
+concept DifferentFrom = !cds::meta::IsSame<L, R>::value;
 
 template <typename T> using Dereferenceable = decltype(*cds::meta::referenceOf<T>());
 } // namespace detail
@@ -19,6 +21,9 @@ concept Dereferenceable = requires(T i) { typename detail::Dereferenceable<T>; }
 
 template <typename L, typename R>
 concept SameAs = detail::SameAs<L, R> && detail::SameAs<R, L>;
+
+template <typename L, typename R>
+concept DifferentFrom = detail::DifferentFrom<L, R> && detail::DifferentFrom<R, L>;
 
 template <typename L, typename R>
 concept ConvertibleTo = cds::meta::IsConvertible<L, R>::value;

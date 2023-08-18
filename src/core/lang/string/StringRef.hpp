@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 20.06.23.
 //
 
-#ifndef AGE_STRING_REF_HPP
-#define AGE_STRING_REF_HPP
-
+#pragma once
 #include <CDS/Object>
 #include <string>
 
@@ -28,8 +26,6 @@ public:
   explicit(false) StringRef(char const* string) noexcept;
   StringRef(char const* string, cds::Size length) noexcept;
 
-  template <int size> explicit(false) StringRef(char const (&string)[size]) noexcept : StringRef(string, size) {}
-
   auto operator=(StringRef const& string) noexcept -> StringRef& = default;
   auto operator=(StringRef&& string) noexcept -> StringRef& = default;
   auto operator=(cds::String const& string) noexcept -> StringRef&;
@@ -38,11 +34,7 @@ public:
   auto operator=(std::string_view const& string) noexcept -> StringRef&;
   auto operator=(char const* string) noexcept -> StringRef&;
 
-  template <int size> auto operator=(char const (&string)[size]) noexcept -> StringRef& {
-    return operator=(StringRef(string));
-  }
-
-  [[nodiscard]] explicit(false) operator bool() const noexcept;
+  [[nodiscard]] explicit operator bool() const noexcept;
   [[nodiscard]] explicit(false) operator cds::StringView() const noexcept;
   [[nodiscard]] explicit(false) operator cds::String() const noexcept;
 
@@ -64,7 +56,7 @@ public:
 
   [[nodiscard]] constexpr auto data() const noexcept { return _buffer; }
   [[nodiscard]] constexpr auto size() const noexcept { return _size; }
-  [[nodiscard]] constexpr auto empty() const noexcept -> bool { return data() == nullptr || size() == 0u; }
+  [[nodiscard]] constexpr auto empty() const noexcept -> bool { return _buffer == nullptr || _size == 0u; }
 
   static constexpr cds::Index const npos = cds::String::invalidIndex;
 
@@ -74,5 +66,3 @@ private:
   using Utils = cds::StringUtils<char>;
 };
 } // namespace age
-
-#endif // AGE_STRING_REF_HPP

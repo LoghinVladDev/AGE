@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 07.07.23.
 //
 
-#ifndef AGE_PATH_AWARE_FSTREAM_HPP
-#define AGE_PATH_AWARE_FSTREAM_HPP
-
+#pragma once
 #include <CDS/Object>
 #include <fstream>
 
@@ -72,5 +70,3 @@ private:
   std::ofstream file;
 };
 } // namespace age
-
-#endif // AGE_PATH_AWARE_FSTREAM_HPP

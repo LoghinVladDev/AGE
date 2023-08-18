@@ -2,9 +2,7 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#ifndef AGE_SETTINGS_REGISTRY_HPP
-#define AGE_SETTINGS_REGISTRY_HPP
-
+#pragma once
 #include <CDS/Union>
 #include <CDS/memory/UniquePointer>
 #include <CDS/util/JSON>
@@ -94,5 +92,3 @@ template <typename Type> auto Registry::replace(StringRef key, Type&& value) noe
   return *this;
 }
 } // namespace age::visualizer::settings
-
-#endif // AGE_SETTINGS_REGISTRY_HPP
