@@ -12,6 +12,8 @@ class Vertex : public QWidget {
   Q_OBJECT
 public:
   explicit Vertex(int x, int y, QWidget* pParent) noexcept;
+signals:
+  auto rightClickPressed(age::visualizer::Vertex* pVertex, QPoint const& qPoint) -> void;
 
 protected:
   auto mousePressEvent(QMouseEvent* pEvent) -> void override;
@@ -20,6 +22,7 @@ protected:
   auto paintEvent(QPaintEvent* pEvent) -> void override;
 
 private:
+  auto handleLeftClickEvent(QMouseEvent* pEvent) -> void;
   static constexpr int VERTEX_DIAMETER = 30;
   static constexpr int PEN_WIDTH_OFFSET = 1;
   static constexpr Qt::GlobalColor DEFAULT_VERTEX_COLOR = Qt::blue;

@@ -22,14 +22,21 @@ auto Vertex::mousePressEvent(QMouseEvent* pEvent) -> void {
       sqrt(((vertexCentre.x() - pEvent->pos().x()) * (vertexCentre.x() - pEvent->pos().x())
             + (vertexCentre.x() - pEvent->pos().x()) * (vertexCentre.x() - pEvent->pos().x())))
       > VERTEX_DIAMETER / 2.0f) {
-    return;
+    QWidget::mousePressEvent(pEvent);
   }
 
-  if (pEvent->button() == Qt::LeftButton) {
-    setPalette(SELECTED_VERTEX_COLOR);
-    _selected = true;
-    _dragOffset = pEvent->pos();
-    raise();
+  switch (pEvent->button()) {
+    case Qt::LeftButton: {
+      handleLeftClickEvent(pEvent);
+      break;
+    }
+    case Qt::RightButton: {
+      emit rightClickPressed(this, mapToParent(pEvent->pos()));
+      break;
+    }
+    default: {
+      QWidget::mousePressEvent(pEvent);
+    }
   }
 }
 
@@ -47,5 +54,12 @@ auto Vertex::mouseReleaseEvent(QMouseEvent* pEvent) -> void {
     setPalette(DEFAULT_VERTEX_COLOR);
     _selected = false;
   }
+}
+
+auto Vertex::handleLeftClickEvent(QMouseEvent* pEvent) -> void {
+  setPalette(SELECTED_VERTEX_COLOR);
+  _selected = true;
+  _dragOffset = pEvent->pos();
+  raise();
 }
 } // namespace age::visualizer

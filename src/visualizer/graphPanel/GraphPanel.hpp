@@ -9,6 +9,7 @@
 
 #include <QMouseEvent>
 #include <vertex/Vertex.hpp>
+#include <vertexMenu/VertexMenu.hpp>
 
 namespace age::visualizer {
 class GraphPanel : public QWidget {
@@ -22,5 +23,6 @@ protected:
 
 private:
   cds::LinkedList<cds::UniquePointer<Vertex>> _vertexList;
+  cds::UniquePointer<VertexMenu> _vertexMenu;
 };
 } // namespace age::visualizer
