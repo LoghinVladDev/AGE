@@ -4,7 +4,9 @@
 
 #include "Logger.hpp"
 
+#ifdef __cpp_lib_format
 #include <format>
+#endif
 
 #include <CDS/TreeMap>
 #include <CDS/threading/Thread>
