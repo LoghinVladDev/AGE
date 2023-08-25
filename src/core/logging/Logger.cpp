@@ -8,6 +8,7 @@
 
 #include <CDS/TreeMap>
 #include <CDS/threading/Thread>
+#include <chrono>
 
 namespace {
 using namespace age;
@@ -55,11 +56,14 @@ auto& container() noexcept {
   return *container;
 }
 
-auto timestamp() -> String { return "<time>"; }
+auto timestamp() {
+  using namespace chrono;
+  return std::format("{:%H:%M:%OS}", current_zone()->to_local(system_clock::now()));
+}
 
-auto toString(LogLevelFlagBit level) {
+auto toString(LogLevelFlagBits level) {
   switch (level) {
-    using enum age::meta::LogLevelFlagBit;
+    using enum age::meta::LogLevelFlagBits;
     case Info: return "Info";
     case Debug: return "Debug";
     case Error: return "Error";
@@ -67,9 +71,9 @@ auto toString(LogLevelFlagBit level) {
   }
 }
 
-auto colour(LogLevelFlagBit level) {
+auto colour(LogLevelFlagBits level) {
   switch (level) {
-    using enum age::meta::LogLevelFlagBit;
+    using enum age::meta::LogLevelFlagBits;
     case Error: return "\033[1;31m";
     case Warning: return "\033[1;33m";
     case Debug: return "\033[1;36m";
@@ -106,45 +110,99 @@ auto LoggerImpl<BoolConstant<true>>::_footer(Level level) -> void {
 }
 
 auto LoggerImpl<BoolConstant<true>>::addColourHeader(ostream& out, Level level) const -> void {
-  // Check if enabled
-  (void) this;
+  if (!optionEnabled(LogOptionFlagBits::OutputTerminalColour)) {
+    return;
+  }
   out << colour(level);
 }
 
 auto LoggerImpl<BoolConstant<true>>::addEndColourMarker(ostream& out) const -> void {
-  // Check if enabled
-  (void) this;
+  if (!optionEnabled(LogOptionFlagBits::OutputTerminalColour)) {
+    return;
+  }
   out << "\033[1;0m";
 }
 
 auto LoggerImpl<BoolConstant<true>>::addLocation(ostream& out, source_location const& where) const -> void {
-  // Check if enabled
-  // Format source_location by pref
-  (void) this;
-  out << "[" << where.function_name() << ":" << where.line() << "]";
+  if (!optionEnabled(LogOptionFlagBits::SourceLocation) || (_options & requireSourceLocation) == 0u) {
+    return;
+  }
+
+  struct {
+    auto request() noexcept { toggle = true; }
+    auto consume() noexcept {
+      if (!toggle) {
+        return;
+      }
+      toggle = false;
+      out << ":";
+    }
+    bool toggle;
+    ostream& out;
+  } sep {false, out};
+
+  auto writeLocationPart = [this, &sep, &out](bool skipFirst, auto flag, auto data) {
+    if (!optionEnabled(flag)) {
+      return;
+    }
+    if (!skipFirst) {
+      sep.request();
+    }
+
+    out << data;
+    sep.consume();
+  };
+
+  out << "[";
+  writeLocationPart(true, LogOptionFlagBits::SourceLocationFile, where.file_name());
+  writeLocationPart(false, LogOptionFlagBits::SourceLocationFunction, where.function_name());
+  writeLocationPart(false, LogOptionFlagBits::SourceLocationLine, where.line());
+  writeLocationPart(false, LogOptionFlagBits::SourceLocationColumn, where.column());
+  out << "]";
 }
 
 auto LoggerImpl<BoolConstant<true>>::addTimestamp(ostream& out, StringRef timestamp) const -> void {
-  // Check if enabled
-  (void) this;
-  out << "[time = " << timestamp << "]";
+  if (!optionEnabled(LogOptionFlagBits::Timestamp)) {
+    return;
+  }
+  out << "[";
+  if (optionEnabled(LogOptionFlagBits::InfoPrefix)) {
+    out << "time = ";
+  }
+  out << timestamp << "]";
 }
 
 auto LoggerImpl<BoolConstant<true>>::addName(ostream& out) const -> void {
-  // Check if enabled
-  out << "[logger = " << name() << "]";
+  if (!optionEnabled(LogOptionFlagBits::LoggerName)) {
+    return;
+  }
+  out << "[";
+  if (optionEnabled(LogOptionFlagBits::InfoPrefix)) {
+    out << "logger = ";
+  }
+  out << name() << "]";
 }
 
 auto LoggerImpl<BoolConstant<true>>::addLevel(ostream& out, Level level) const -> void {
-  // Check if enabled
-  (void) this;
-  out << "[level = " << toString(level) << "]";
+  if (!optionEnabled(LogOptionFlagBits::LogLevel)) {
+    return;
+  }
+  out << "[";
+  if (optionEnabled(LogOptionFlagBits::InfoPrefix)) {
+    out << "level = ";
+  }
+  out << toString(level) << "]";
 }
 
 auto LoggerImpl<BoolConstant<true>>::addThreadId(ostream& out) const -> void {
-  // Check if enabled
-  (void) this;
-  out << std::format("[thread = 0x{:x}]", Thread::currentThreadID());
+  if (!optionEnabled(LogOptionFlagBits::ThreadId)) {
+    return;
+  }
+  out << "[";
+  if (optionEnabled(LogOptionFlagBits::InfoPrefix)) {
+    out << "thread = ";
+  }
+  out << std::format("0x{:x}]", Thread::currentThreadID());
 }
 } // namespace meta
 
