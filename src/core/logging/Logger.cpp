@@ -4,13 +4,16 @@
 
 #include "Logger.hpp"
 
+#include <chrono>
+
 #ifdef __cpp_lib_format
+#if __cpp_lib_format > 202207l
 #include <format>
+#endif
 #endif
 
 #include <CDS/TreeMap>
 #include <CDS/threading/Thread>
-#include <chrono>
 
 namespace {
 using namespace age;
@@ -59,8 +62,25 @@ auto& container() noexcept {
 }
 
 auto timestamp() {
+#ifdef __cpp_lib_format
+#if __cpp_lib_format > 202207l
   using namespace chrono;
   return std::format("{:%H:%M:%OS}", current_zone()->to_local(system_clock::now()));
+#endif
+  int const timeBufferSize = 512U;
+  using sys_clock = std::chrono::system_clock;
+
+  auto timePoint = sys_clock::now();
+  auto asTimeT = sys_clock::to_time_t(timePoint);
+  tm timeInfo {};
+  localtime_r(&asTimeT, &timeInfo);
+
+  string asString(timeBufferSize, '\0');
+  asString.resize(std::strftime(asString.data(), timeBufferSize, "%d-%m-%Y", &timeInfo));
+  asString.resize(asString.length());
+
+  return asString;
+#endif
 }
 
 auto toString(LogLevelFlagBits level) {
