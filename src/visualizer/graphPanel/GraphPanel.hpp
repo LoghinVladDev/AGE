@@ -17,6 +17,8 @@ class GraphPanel : public QWidget {
 public:
   explicit GraphPanel(QWidget* pParent = nullptr) noexcept;
   ~GraphPanel() noexcept override = default;
+public slots:
+  auto menuPopup(QPoint const& point) -> void;
 
 protected:
   auto mousePressEvent(QMouseEvent* pEvent) -> void override;
@@ -24,5 +26,7 @@ protected:
 private:
   cds::LinkedList<cds::UniquePointer<Vertex>> _vertexList;
   cds::UniquePointer<VertexMenu> _vertexMenu;
+
+  cds::UniquePointer<QAction> _deleteAction;
 };
 } // namespace age::visualizer

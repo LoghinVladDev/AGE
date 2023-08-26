@@ -3,39 +3,41 @@
 //
 
 #include "Vertex.hpp"
-
 namespace age::visualizer {
+Vertex::Vertex(QPoint const& point, QWidget* pParent) noexcept : Vertex(point.x(), point.y(), pParent) {}
+
 Vertex::Vertex(int x, int y, QWidget* pParent) noexcept : QWidget(pParent) {
-  move(x - VERTEX_DIAMETER / 2, y - VERTEX_DIAMETER / 2);
-  resize(VERTEX_DIAMETER, VERTEX_DIAMETER);
+  move(x - WIDGET_SIZE / 2, y - WIDGET_SIZE / 2);
+  resize(WIDGET_SIZE, WIDGET_SIZE);
   setPalette(DEFAULT_VERTEX_COLOR);
 }
 
 auto Vertex::paintEvent(QPaintEvent*) -> void {
   QPainter painter(this);
   painter.setPen(palette().color(backgroundRole()));
-  painter.drawEllipse(0, 0, VERTEX_DIAMETER - PEN_WIDTH_OFFSET, VERTEX_DIAMETER - PEN_WIDTH_OFFSET);
+  painter.drawEllipse((WIDGET_SIZE - DRAWN_VERTEX_DIAMETER) / 2, (WIDGET_SIZE - DRAWN_VERTEX_DIAMETER) / 2,
+                      DRAWN_VERTEX_DIAMETER, DRAWN_VERTEX_DIAMETER);
 }
 
 auto Vertex::mousePressEvent(QMouseEvent* pEvent) -> void {
-  if (QPoint vertexCentre {VERTEX_DIAMETER / 2, VERTEX_DIAMETER / 2};
+  if (QPoint vertexCentre {WIDGET_SIZE / 2, WIDGET_SIZE / 2};
       sqrt(((vertexCentre.x() - pEvent->pos().x()) * (vertexCentre.x() - pEvent->pos().x())
             + (vertexCentre.x() - pEvent->pos().x()) * (vertexCentre.x() - pEvent->pos().x())))
-      > VERTEX_DIAMETER / 2.0f) {
-    QWidget::mousePressEvent(pEvent);
-  }
-
-  switch (pEvent->button()) {
-    case Qt::LeftButton: {
-      handleLeftClickEvent(pEvent);
-      break;
-    }
-    case Qt::RightButton: {
-      emit rightClickPressed(this, mapToParent(pEvent->pos()));
-      break;
-    }
-    default: {
-      QWidget::mousePressEvent(pEvent);
+      > DRAWN_VERTEX_DIAMETER / 2.0f) {
+    return;
+  } else {
+    switch (pEvent->button()) {
+      case Qt::LeftButton: {
+        handleLeftClickEvent(pEvent);
+        break;
+      }
+      case Qt::RightButton: {
+        emit rightClickPressed(mapToParent(pEvent->pos()));
+        break;
+      }
+      default: {
+        QWidget::mousePressEvent(pEvent);
+      }
     }
   }
 }
