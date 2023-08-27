@@ -227,6 +227,7 @@ auto LoggerImpl<BoolConstant<true>>::addThreadId(ostream& out) const -> void {
   out << std::format("0x{:x}]", Thread::currentThreadID());
 #else
   out << "0x" << std::hex << Thread::currentThreadID();
+#endif
 }
 } // namespace meta
 
