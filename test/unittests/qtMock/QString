@@ -1,0 +1,8 @@
+//
+// Created by Vlad-Andrei Loghin on 18.06.23.
+//
+
+#pragma once
+
+struct QString {
+};

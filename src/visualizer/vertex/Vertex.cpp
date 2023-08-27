@@ -3,7 +3,11 @@
 //
 
 #include "Vertex.hpp"
-namespace age::visualizer {
+
+namespace {
+using namespace age::visualizer;
+} // namespace
+
 Vertex::Vertex(QPoint const& point, QWidget* pParent) noexcept : Vertex(point.x(), point.y(), pParent) {}
 
 Vertex::Vertex(int x, int y, QWidget* pParent) noexcept : QWidget(pParent) {
@@ -21,8 +25,8 @@ auto Vertex::paintEvent(QPaintEvent*) -> void {
 
 auto Vertex::mousePressEvent(QMouseEvent* pEvent) -> void {
   if (QPoint vertexCentre {WIDGET_SIZE / 2, WIDGET_SIZE / 2};
-      sqrt(((vertexCentre.x() - pEvent->pos().x()) * (vertexCentre.x() - pEvent->pos().x())
-            + (vertexCentre.x() - pEvent->pos().x()) * (vertexCentre.x() - pEvent->pos().x())))
+      sqrt((vertexCentre.x() - pEvent->position().x()) * (vertexCentre.x() - pEvent->position().x())
+           + (vertexCentre.x() - pEvent->position().x()) * (vertexCentre.x() - pEvent->position().x()))
       > DRAWN_VERTEX_DIAMETER / 2.0f) {
     return;
   } else {
@@ -32,7 +36,7 @@ auto Vertex::mousePressEvent(QMouseEvent* pEvent) -> void {
         break;
       }
       case Qt::RightButton: {
-        emit rightClickPressed(mapToParent(pEvent->pos()));
+        emit rightClickPressed(mapToParent(pEvent->position()));
         break;
       }
       default: {
@@ -47,7 +51,7 @@ auto Vertex::mouseMoveEvent(QMouseEvent* pEvent) -> void {
     return;
   }
   if (_selected) {
-    move(mapToParent(pEvent->pos() - _dragOffset));
+    move(mapToParent(pEvent->position().toPoint() - _dragOffset));
   }
 }
 
@@ -61,7 +65,6 @@ auto Vertex::mouseReleaseEvent(QMouseEvent* pEvent) -> void {
 auto Vertex::handleLeftClickEvent(QMouseEvent* pEvent) -> void {
   setPalette(SELECTED_VERTEX_COLOR);
   _selected = true;
-  _dragOffset = pEvent->pos();
+  _dragOffset = pEvent->position().toPoint();
   raise();
 }
-} // namespace age::visualizer

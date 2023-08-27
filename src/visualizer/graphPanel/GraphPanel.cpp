@@ -13,7 +13,9 @@ GraphPanel::GraphPanel(QWidget* pParent) noexcept :
     QWidget(pParent), _vertexMenu(cds::makeUnique<VertexMenu>(this)),
     _deleteAction(cds::makeUnique<QAction>(tr("&Delete"), _vertexMenu)) {
   //TODO create AbstractSelection of vertices to be passed to all actions triggered from the context menu
-  QObject::connect(_deleteAction, &QAction::triggered, []() { qDebug() << "Deleted"; });
+  QObject::connect(_deleteAction, &QAction::triggered, []() {
+    // empty on purpose
+  });
   _vertexMenu->addAction(_deleteAction);
 }
 
@@ -25,4 +27,4 @@ auto GraphPanel::mousePressEvent(QMouseEvent* pEvent) -> void {
   _vertexList.pushBack(std::move(newVertex))->show();
 }
 
-auto GraphPanel::menuPopup(QPoint const& point) -> void { _vertexMenu->exec(mapToGlobal(point)); }
+auto GraphPanel::menuPopup(QPointF const& point) -> void { _vertexMenu->exec(mapToGlobal(point).toPoint()); }

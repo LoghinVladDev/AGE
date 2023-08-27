@@ -6,6 +6,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QWidget>
+#include <intern/QtDefines.hpp>
 
 namespace age::visualizer {
 class Vertex : public QWidget {
@@ -14,7 +15,7 @@ public:
   explicit Vertex(QPoint const& point, QWidget* pParent) noexcept;
   explicit Vertex(int x, int y, QWidget* pParent) noexcept;
 signals:
-  auto rightClickPressed(QPoint const& qPoint) -> void;
+  void rightClickPressed(QPointF const&) const AGE_DECLSPEC_SIGNAL;
 
 protected:
   auto mousePressEvent(QMouseEvent* pEvent) -> void override;

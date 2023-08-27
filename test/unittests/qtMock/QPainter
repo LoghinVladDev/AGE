@@ -7,13 +7,14 @@
 #include <QCommon>
 #include <QCore>
 #include <QPaintEvent>
+#include <QPoint>
 
 struct QPaintDevice;
 
 struct QPainter {
 
 public:
-  QPainter(QPaintDevice* pPaintDevice) {}
-  auto setPen(Qt::QColor) {}
-  auto drawEllipse(int, int, int, int) {}
+  explicit QPainter(QPaintDevice*) {}
+  auto setPen(Qt::QColor) const { return; }
+  auto drawEllipse(int, int, int, int) const { return; }
 };
