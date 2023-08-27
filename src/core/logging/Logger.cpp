@@ -6,10 +6,10 @@
 
 #include <chrono>
 
-#ifdef __cpp_lib_format
-#if __cpp_lib_format > 202207l
+#define CI_FORMAT_AVAILABLE false
+
+#if defined(__cpp_lib_format) && __cpp_lib_format > 202207l && CI_FORMAT_AVAILABLE
 #include <format>
-#endif
 #endif
 
 #include <CDS/TreeMap>
@@ -62,11 +62,10 @@ auto& container() noexcept {
 }
 
 auto timestamp() {
-#ifdef __cpp_lib_format
-#if __cpp_lib_format > 202207l
+#if defined(__cpp_lib_format) && __cpp_lib_format > 202207l && CI_FORMAT_AVAILABLE
   using namespace chrono;
   return std::format("{:%H:%M:%OS}", current_zone()->to_local(system_clock::now()));
-#endif
+#else
   int const timeBufferSize = 512U;
   using sys_clock = std::chrono::system_clock;
 
