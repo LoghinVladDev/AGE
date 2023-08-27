@@ -223,7 +223,10 @@ auto LoggerImpl<BoolConstant<true>>::addThreadId(ostream& out) const -> void {
   if (optionEnabled(LogOptionFlagBits::InfoPrefix)) {
     out << "thread = ";
   }
+#if CI_FORMAT_AVAILABLE
   out << std::format("0x{:x}]", Thread::currentThreadID());
+#else
+  out << "0x" << std::hex << Thread::currentThreadID();
 }
 } // namespace meta
 
