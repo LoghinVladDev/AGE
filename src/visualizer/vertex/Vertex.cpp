@@ -55,7 +55,7 @@ auto Vertex::mouseReleaseEvent(QMouseEvent* pEvent) -> void {
   }
 }
 
-auto Vertex::handleLeftClickEvent(QMouseEvent* pEvent) -> void {
+auto Vertex::handleLeftClickEvent(QMouseEvent const* pEvent) -> void {
   setPalette(SELECTED_VERTEX_COLOR);
   _selected = true;
   _dragOffset = pEvent->position().toPoint();

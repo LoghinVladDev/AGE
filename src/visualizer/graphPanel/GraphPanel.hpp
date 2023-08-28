@@ -18,7 +18,7 @@ public:
   explicit GraphPanel(QWidget* pParent = nullptr) noexcept;
   ~GraphPanel() noexcept override = default;
 public slots:
-  auto menuPopup(QPointF const& point) -> void;
+  auto menuPopup(QPointF const& point) const -> void;
 
 protected:
   auto mousePressEvent(QMouseEvent* pEvent) -> void override;

@@ -25,7 +25,7 @@ protected:
   auto paintEvent(QPaintEvent* pEvent) -> void override;
 
 private:
-  auto handleLeftClickEvent(QMouseEvent* pEvent) -> void;
+  auto handleLeftClickEvent(QMouseEvent const* pEvent) -> void;
   static constexpr auto distanceToCenter(QPoint const& point) -> double;
   static constexpr int DRAWN_VERTEX_DIAMETER = 30;
   static constexpr int WIDGET_SIZE = 40;

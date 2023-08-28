@@ -26,4 +26,4 @@ auto GraphPanel::mousePressEvent(QMouseEvent* pEvent) -> void {
   _vertexList.pushBack(std::move(newVertex))->show();
 }
 
-auto GraphPanel::menuPopup(QPointF const& point) -> void { _vertexMenu->exec(mapToGlobal(point).toPoint()); }
+auto GraphPanel::menuPopup(QPointF const& point) const -> void { _vertexMenu->exec(mapToGlobal(point).toPoint()); }
