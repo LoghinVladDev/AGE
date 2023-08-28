@@ -12,7 +12,6 @@ using namespace age::visualizer;
 GraphPanel::GraphPanel(QWidget* pParent) noexcept :
     QWidget(pParent), _vertexMenu(cds::makeUnique<VertexMenu>(this)),
     _deleteAction(cds::makeUnique<QAction>(tr("&Delete"), _vertexMenu)) {
-  //TODO create AbstractSelection of vertices to be passed to all actions triggered from the context menu
   QObject::connect(_deleteAction, &QAction::triggered, []() {
     // empty on purpose
   });

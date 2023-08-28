@@ -13,24 +13,44 @@
 struct QPaintEvent;
 
 struct QWidget : QPaintDevice, QObject {
-  auto resize(int, int) const noexcept -> void { return; }
-  auto show() const noexcept -> void { return; }
+  auto resize(int, int) const noexcept -> void {
+    // empty on purpose
+  }
+  auto show() const noexcept -> void {
+    // empty on purpose
+  }
   explicit QWidget(QWidget* = nullptr) {}
   virtual ~QWidget() noexcept = default;
-  virtual auto mousePressEvent(QMouseEvent*) -> void { return; };
-  virtual auto mouseMoveEvent(QMouseEvent*) -> void { return; };
-  virtual auto mouseReleaseEvent(QMouseEvent*) -> void { return; };
-  auto move(QPoint const&) const noexcept -> void { return; }
-  auto move(int, int) const noexcept -> void { return; }
-  virtual auto paintEvent(QPaintEvent*) -> void { return; }
-  auto setPalette(QPalette const &) const noexcept -> void { return; }
+  virtual auto mousePressEvent(QMouseEvent*) -> void {
+      // empty on purpose
+  }
+  virtual auto mouseMoveEvent(QMouseEvent*) -> void {
+      // empty on purpose
+  }
+  virtual auto mouseReleaseEvent(QMouseEvent*) -> void {
+      // empty on purpose
+  }
+  auto move(QPoint const&) const noexcept -> void {
+    // empty on purpose
+  }
+  auto move(int, int) const noexcept -> void {
+    // empty on purpose
+  }
+  virtual auto paintEvent(QPaintEvent*) -> void {
+    // empty on purpose
+  }
+  auto setPalette(QPalette const &) const noexcept -> void {
+    // empty on purpose
+  }
   auto palette() const noexcept -> QPalette const & { return _defaultPalette; }
   auto backgroundRole() const noexcept -> QPalette::ColorRole { return QPalette::_unused; }
   auto mapToParent(QPointF const&) const -> QPointF { return {}; }
   auto mapToParent(QPoint const&) const -> QPoint { return {}; }
   auto mapToGlobal(QPoint const&) const -> QPoint { return {}; }
   auto mapToGlobal(QPointF const&) const -> QPointF { return {}; }
-  auto raise() const { return; }
+  auto raise() const {
+    // empty on purpose
+  }
 private:
   static inline QPalette _defaultPalette;
 };

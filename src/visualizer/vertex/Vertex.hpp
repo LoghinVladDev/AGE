@@ -6,14 +6,15 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QWidget>
+#include <cmath>
 #include <intern/QtDefines.hpp>
 
 namespace age::visualizer {
 class Vertex : public QWidget {
   Q_OBJECT
 public:
-  explicit Vertex(QPoint const& point, QWidget* pParent) noexcept;
   explicit Vertex(int x, int y, QWidget* pParent) noexcept;
+  explicit Vertex(QPoint const& point, QWidget* pParent) noexcept;
 signals:
   void rightClickPressed(QPointF const&) const AGE_DECLSPEC_SIGNAL;
 
@@ -25,6 +26,7 @@ protected:
 
 private:
   auto handleLeftClickEvent(QMouseEvent* pEvent) -> void;
+  static constexpr auto distanceToCenter(QPoint const& point) -> double;
   static constexpr int DRAWN_VERTEX_DIAMETER = 30;
   static constexpr int WIDGET_SIZE = 40;
   static constexpr Qt::GlobalColor DEFAULT_VERTEX_COLOR = Qt::blue;
