@@ -28,14 +28,8 @@ auto Vertex::mousePressEvent(QMouseEvent* pEvent) -> void {
     return;
   }
   switch (pEvent->button()) {
-    case Qt::LeftButton: {
-      handleLeftClickEvent(pEvent);
-      break;
-    }
-    case Qt::RightButton: {
-      emit rightClickPressed(mapToParent(pEvent->position()));
-      break;
-    }
+    case Qt::LeftButton: handleLeftClickEvent(pEvent); break;
+    case Qt::RightButton: emit rightClickPressed(mapToParent(pEvent->position())); break;
     default: {
       QWidget::mousePressEvent(pEvent);
     }
