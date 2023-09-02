@@ -15,7 +15,7 @@ class Vertex : public QWidget {
 public:
   explicit Vertex(int x, int y, QWidget* pParent) noexcept;
   explicit Vertex(QPoint const& point, QWidget* pParent) noexcept;
-  
+
 signals:
   void rightClickPressed(QPointF const&) const AGE_DECLSPEC_SIGNAL;
 
