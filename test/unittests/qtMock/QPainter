@@ -15,8 +15,6 @@ struct QPainter {
 
 public:
   explicit QPainter(QPaintDevice*) {}
-  auto setPen(Qt::QColor) const {
-    // empty on purpose
-  }
+  auto setPen(Qt::QColor) const {}
   auto drawEllipse(int, int, int, int) const {}
 };
