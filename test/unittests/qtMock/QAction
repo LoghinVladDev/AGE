@@ -14,7 +14,5 @@ struct QAction : QObject {
   static auto exec() noexcept -> int {
     return 0;
   }
-  auto triggered() const {
-    // empty on purpose
-  }
+  auto triggered() const {}
 };

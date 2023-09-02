@@ -18,7 +18,5 @@ public:
   auto setPen(Qt::QColor) const {
     // empty on purpose
   }
-  auto drawEllipse(int, int, int, int) const {
-    // empty on purpose
-  }
+  auto drawEllipse(int, int, int, int) const {}
 };

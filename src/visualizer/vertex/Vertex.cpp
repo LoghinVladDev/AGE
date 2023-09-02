@@ -28,8 +28,12 @@ auto Vertex::mousePressEvent(QMouseEvent* pEvent) -> void {
     return;
   }
   switch (pEvent->button()) {
-    case Qt::LeftButton: handleLeftClickEvent(pEvent); break;
-    case Qt::RightButton: emit rightClickPressed(mapToParent(pEvent->position())); break;
+    case Qt::LeftButton: 
+      handleLeftClickEvent(pEvent); 
+      break;
+    case Qt::RightButton: 
+      emit rightClickPressed(mapToParent(pEvent->position())); 
+      break;
     default: {
       QWidget::mousePressEvent(pEvent);
     }
@@ -58,7 +62,7 @@ auto Vertex::handleLeftClickEvent(QMouseEvent const* pEvent) -> void {
 
 constexpr auto Vertex::distanceToCenter(QPoint const& point) -> double {
   auto distToCenter = WIDGET_SIZE / 2;
-  auto distEventToCenterX = distToCenter - point.x();
-  auto distEventToCenterY = distToCenter - point.y();
-  return std::sqrt(distEventToCenterX * distEventToCenterX + distEventToCenterY * distEventToCenterY);
+  auto distPointToCenterX = distToCenter - point.x();
+  auto distPointToCenterY = distToCenter - point.y();
+  return std::sqrt(distPointToCenterX * distPointToCenterX + distPointToCenterY * distPointToCenterY);
 }

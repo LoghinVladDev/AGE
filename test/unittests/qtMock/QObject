@@ -9,14 +9,10 @@ struct QObject {
   template <
       typename PointerToMemberFunction,
       typename Functor
-  > static auto connect(QObject*, PointerToMemberFunction, Functor) {
-    // empty on purpose
-  }
+  > static auto connect(QObject*, PointerToMemberFunction, Functor) {}
 
   template <
       typename PointerToMemberFunction,
       typename Functor
-  > static auto connect(QObject*, PointerToMemberFunction, QObject*, Functor) {
-    // empty on purpose
-  }
+  > static auto connect(QObject*, PointerToMemberFunction, QObject*, Functor) {}
 };

@@ -7,10 +7,6 @@
 
 struct QMenu : QWidget {
   explicit QMenu(QWidget* = nullptr) {}
-  auto addAction(QAction*) const {
-    // empty on purpose
-  }
-  auto exec(QPoint const&) const {
-    // empty on purpose
-  }
+  auto addAction(QAction*) const {}
+  auto exec(QPoint const&) const {}
 };

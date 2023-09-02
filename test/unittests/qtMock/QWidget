@@ -13,44 +13,24 @@
 struct QPaintEvent;
 
 struct QWidget : QPaintDevice, QObject {
-  auto resize(int, int) const noexcept -> void {
-    // empty on purpose
-  }
-  auto show() const noexcept -> void {
-    // empty on purpose
-  }
+  auto resize(int, int) const noexcept -> void {}
+  auto show() const noexcept -> void {}
   explicit QWidget(QWidget* = nullptr) {}
   virtual ~QWidget() noexcept = default;
-  virtual auto mousePressEvent(QMouseEvent*) -> void {
-      // empty on purpose
-  }
-  virtual auto mouseMoveEvent(QMouseEvent*) -> void {
-      // empty on purpose
-  }
-  virtual auto mouseReleaseEvent(QMouseEvent*) -> void {
-      // empty on purpose
-  }
-  auto move(QPoint const&) const noexcept -> void {
-    // empty on purpose
-  }
-  auto move(int, int) const noexcept -> void {
-    // empty on purpose
-  }
-  virtual auto paintEvent(QPaintEvent*) -> void {
-    // empty on purpose
-  }
-  auto setPalette(QPalette const &) const noexcept -> void {
-    // empty on purpose
-  }
+  virtual auto mousePressEvent(QMouseEvent*) -> void {}
+  virtual auto mouseMoveEvent(QMouseEvent*) -> void {}
+  virtual auto mouseReleaseEvent(QMouseEvent*) -> void {}
+  auto move(QPoint const&) const noexcept -> void {}
+  auto move(int, int) const noexcept -> void {}
+  virtual auto paintEvent(QPaintEvent*) -> void {}
+  auto setPalette(QPalette const &) const noexcept -> void {}
   auto palette() const noexcept -> QPalette const & { return _defaultPalette; }
   auto backgroundRole() const noexcept -> QPalette::ColorRole { return QPalette::_unused; }
   auto mapToParent(QPointF const&) const -> QPointF { return {}; }
   auto mapToParent(QPoint const&) const -> QPoint { return {}; }
   auto mapToGlobal(QPoint const&) const -> QPoint { return {}; }
   auto mapToGlobal(QPointF const&) const -> QPointF { return {}; }
-  auto raise() const {
-    // empty on purpose
-  }
+  auto raise() const {}
 private:
   static inline QPalette _defaultPalette;
 };
