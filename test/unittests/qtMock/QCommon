@@ -4,4 +4,15 @@
 
 #pragma once
 
+#include <QString>
+
+#ifdef AGE_DECLSPEC_SIGNAL
+#undef AGE_DECLSPEC_SIGNAL
+#endif
+#define AGE_DECLSPEC_SIGNAL {}
+
 #define Q_OBJECT
+#define slots
+#define signals public
+#define emit
+static auto tr(char const*) { return QString{}; }

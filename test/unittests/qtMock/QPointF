@@ -4,12 +4,15 @@
 
 #pragma once
 
+#include <QPoint>
+
 struct QPointF {
+  QPointF() = default;
   QPointF(double x, double y) : _x(x), _y(y) {}
 
   auto x() const { return _x; }
   auto y() const { return _y; }
-
+  auto toPoint() const { return QPoint{static_cast<int>(_x), static_cast<int>(_y)}; }
   double _x;
   double _y;
 };

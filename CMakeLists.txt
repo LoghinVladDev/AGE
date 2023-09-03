@@ -45,6 +45,7 @@ set(
     CORE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/core/lang/string/StringRef.cpp
     ${CMAKE_SOURCE_DIR}/src/core/lang/filesystem/PathAwareFstream.cpp
+    src/core/intern/QtDefines.hpp
 )
 
 add_library(
@@ -66,56 +67,57 @@ if(DEFINED QT_VERSION)
   set(CMAKE_AUTOUIC ON)
 
   set(
-      VISUALIZER_CORE_SOURCES
-      ${CMAKE_SOURCE_DIR}/src/visualizer/settings/SettingsRegistry.cpp
+     VISUALIZER_CORE_SOURCES
+     ${CMAKE_SOURCE_DIR}/src/visualizer/settings/SettingsRegistry.cpp
   )
 
   set(
-      VISUALIZER_SOURCES
-      ${CMAKE_SOURCE_DIR}/src/visualizer/window/VisualizerWindow.cpp
-      ${CMAKE_SOURCE_DIR}/src/visualizer/vertex/Vertex.cpp
-      ${CMAKE_SOURCE_DIR}/src/visualizer/graphPanel/GraphPanel.cpp
+     VISUALIZER_SOURCES
+     ${CMAKE_SOURCE_DIR}/src/visualizer/window/VisualizerWindow.cpp
+     ${CMAKE_SOURCE_DIR}/src/visualizer/vertex/Vertex.cpp
+     ${CMAKE_SOURCE_DIR}/src/visualizer/vertexMenu/VertexMenu.cpp
+     ${CMAKE_SOURCE_DIR}/src/visualizer/graphPanel/GraphPanel.cpp
   )
 
   add_library(
-      lib.visualizer_core
-      STATIC
-      ${VISUALIZER_CORE_SOURCES}
+    lib.visualizer_core
+    STATIC
+    ${VISUALIZER_CORE_SOURCES}
   )
 
   target_link_libraries(
-      lib.visualizer_core
-      PUBLIC
-      lib.core
+    lib.visualizer_core
+    PUBLIC
+    lib.core
   )
 
   add_executable(
-      visualizer
-      ${VISUALIZER_SOURCES}
-      src/target/visualizer.cpp
+    visualizer
+    ${VISUALIZER_SOURCES}
+    src/target/visualizer.cpp
   )
 
   target_link_libraries(
-      visualizer
-      lib.core
-      lib.visualizer_core
-      Qt${QT_VERSION}::Core
-      Qt${QT_VERSION}::Gui
-      Qt${QT_VERSION}::Widgets
+    visualizer
+    lib.core
+    lib.visualizer_core
+    Qt${QT_VERSION}::Core
+    Qt${QT_VERSION}::Gui
+    Qt${QT_VERSION}::Widgets
   )
 
   target_include_directories(
-      visualizer
-      PUBLIC
-      src/visualizer
-      ${AGE_CORE_INCLUDE_DIRECTORIES}
+    visualizer
+    PUBLIC
+    src/visualizer
+    ${AGE_CORE_INCLUDE_DIRECTORIES}
   )
 
   target_include_directories(
-      lib.visualizer_core
-      PUBLIC
-      src/visualizer
-      ${AGE_CORE_INCLUDE_DIRECTORIES}
+    lib.visualizer_core
+    PUBLIC
+    src/visualizer
+    ${AGE_CORE_INCLUDE_DIRECTORIES}
   )
 endif()
 

@@ -5,10 +5,19 @@
 #pragma once
 
 #include <QCommon>
+#include <QCore>
 #include <QPointF>
 
 struct QMouseEvent {
-public:
-  auto position() const -> QPointF {return {0.0, 0.0};}
+  QMouseEvent() = default;
+  QMouseEvent(Qt::MouseButton const& button, QPointF const& pointF) :
+      _button(button), _position(pointF) {}
+
+  auto position() const -> QPointF { return _position; }
+  auto button() const -> Qt::MouseButton { return _button; }
+  auto buttons() const -> Qt::MouseButton { return {}; }
+
+  Qt::MouseButton _button{Qt::LeftButton};
+  QPointF _position{};
 };
 

@@ -5,11 +5,12 @@
 #pragma once
 
 struct QPoint {
+  QPoint() = default;
   QPoint(int x, int y) : _x(x), _y(y) {}
 
   auto x() const { return _x; }
   auto y() const { return _y; }
-
+  auto operator-(QPoint const& ) const { return QPoint{}; }
   int _x;
   int _y;
 };

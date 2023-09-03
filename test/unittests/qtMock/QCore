@@ -9,4 +9,10 @@ struct Qt {
     blue,
     red
   };
+  using GlobalColor = QColor;
+  enum MouseButton {
+    RightButton,
+    LeftButton,
+    MiddleButton
+  };
 };

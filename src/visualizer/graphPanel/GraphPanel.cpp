@@ -9,10 +9,21 @@ using cds::UniquePointer;
 using namespace age::visualizer;
 } // namespace
 
-GraphPanel::GraphPanel(QWidget* pParent) noexcept : QWidget(pParent) {}
+GraphPanel::GraphPanel(QWidget* pParent) noexcept :
+    QWidget(pParent), _vertexMenu(cds::makeUnique<VertexMenu>(this)),
+    _deleteAction(cds::makeUnique<QAction>(tr("&Delete"), _vertexMenu)) {
+  QObject::connect(_deleteAction, &QAction::triggered, []() {
+    // empty on purpose
+  });
+  _vertexMenu->addAction(_deleteAction);
+}
 
 auto GraphPanel::mousePressEvent(QMouseEvent* pEvent) -> void {
   QWidget::mousePressEvent(pEvent);
   auto mousePos = pEvent->position();
-  _vertexList.pushBack(cds::makeUnique<Vertex>(mousePos.x(), mousePos.y(), this))->show();
+  auto newVertex = cds::makeUnique<Vertex>(mousePos.x(), mousePos.y(), this);
+  QObject::connect(newVertex, &Vertex::rightClickPressed, this, &GraphPanel::menuPopup);
+  _vertexList.pushBack(std::move(newVertex))->show();
 }
+
+auto GraphPanel::menuPopup(QPointF const& point) const -> void { _vertexMenu->exec(mapToGlobal(point).toPoint()); }

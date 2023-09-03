@@ -1,0 +1,18 @@
+//
+// Created by Vlad-Andrei Loghin on 18.06.23.
+//
+
+#pragma once
+
+#include <QObject>
+
+struct QString;
+
+struct QAction : QObject {
+  explicit QAction(QObject* = nullptr) {}
+  explicit QAction(QString const&, QObject* = nullptr) {}
+  static auto exec() noexcept -> int {
+    return 0;
+  }
+  auto triggered() const {}
+};

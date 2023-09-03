@@ -9,6 +9,7 @@
 
 #include <QMouseEvent>
 #include <vertex/Vertex.hpp>
+#include <vertexMenu/VertexMenu.hpp>
 
 namespace age::visualizer {
 class GraphPanel : public QWidget {
@@ -16,11 +17,16 @@ class GraphPanel : public QWidget {
 public:
   explicit GraphPanel(QWidget* pParent = nullptr) noexcept;
   ~GraphPanel() noexcept override = default;
+public slots:
+  auto menuPopup(QPointF const& point) const -> void;
 
 protected:
   auto mousePressEvent(QMouseEvent* pEvent) -> void override;
 
 private:
   cds::LinkedList<cds::UniquePointer<Vertex>> _vertexList;
+  cds::UniquePointer<VertexMenu> _vertexMenu;
+
+  cds::UniquePointer<QAction> _deleteAction;
 };
 } // namespace age::visualizer
