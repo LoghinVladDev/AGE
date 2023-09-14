@@ -14,8 +14,14 @@ TEST(GraphPanelTest, construction) { GraphPanel g; }
 struct TestGraphPanel : GraphPanel {
   void mousePressEvent(QMouseEvent* pEvent) override { this->GraphPanel::mousePressEvent(pEvent); }
 };
+
 TEST(GraphPanelTest, mousePressEvent) {
   TestGraphPanel t;
-  QMouseEvent e;
-  t.mousePressEvent(&e);
+  QMouseEvent mouseEvent;
+  t.mousePressEvent(&mouseEvent);
+}
+
+TEST(GraphPanelTest, menuPopup) {
+  GraphPanel g;
+  g.menuPopup({});
 }
