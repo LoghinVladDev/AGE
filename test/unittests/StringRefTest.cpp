@@ -671,3 +671,23 @@ TEST(StringRef, cmpSH) {
   ASSERT_EQ("abcd" <=> r, eq);
   ASSERT_EQ("abcde" <=> r, gt);
 }
+
+TEST(StringTest, refTestCoverage) {
+  String cdsStr;
+  StringView cdsView;
+  std::string stdStr;
+  std::string_view stdView;
+  char const* cstr = "";
+
+  auto const r1 = ref(cdsStr);
+  auto const r2 = ref(cdsView);
+  auto const r3 = ref(stdStr);
+  auto const r4 = ref(stdView);
+  auto const r5 = ref(cstr);
+
+  (void) r1;
+  (void) r2;
+  (void) r3;
+  (void) r4;
+  (void) r5;
+}
