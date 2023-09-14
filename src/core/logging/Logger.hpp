@@ -102,11 +102,80 @@ public:
 
 protected:
   using Level = LogLevelFlagBits;
-  using OptionFlag = LogLevelFlagBits;
+  using OptionFlag = LogOptionFlagBits;
 
   LoggerImplBase() noexcept = default;
   explicit LoggerImplBase(LoggerOutput out) noexcept : _outputs(1u, out) {}
   auto& outputs() noexcept { return _outputs; }
+  [[nodiscard]] auto const& outputs() const noexcept { return _outputs; }
+
+  [[nodiscard]] constexpr auto name() const noexcept {
+    (void) this;
+    return "anonymous_logger";
+  }
+
+  [[nodiscard]] constexpr auto defaultLevel() const noexcept {
+    (void) this;
+    return Level::Info;
+  }
+
+  [[nodiscard]] auto setDefaultLevel(Level level) noexcept {
+    (void) this;
+    (void) level;
+  }
+
+  constexpr auto enableOptions(LogOptionFlags optionFlags) noexcept -> void {
+    (void) this;
+    (void) optionFlags;
+  }
+
+  constexpr auto disableOptions(LogOptionFlags optionFlags) noexcept -> void {
+    (void) this;
+    (void) optionFlags;
+  }
+
+  constexpr auto setOptions(LogOptionFlags optionFlags) noexcept -> void {
+    (void) this;
+    (void) optionFlags;
+  }
+
+  constexpr auto enableOptions(LogOptionFlagBits optionFlag) noexcept -> void {
+    (void) this;
+    (void) optionFlag;
+  }
+
+  constexpr auto disableOptions(LogOptionFlagBits optionFlag) noexcept -> void {
+    (void) this;
+    (void) optionFlag;
+  }
+
+  constexpr auto setOptions(LogOptionFlagBits optionFlag) noexcept -> void {
+    (void) this;
+    (void) optionFlag;
+  }
+
+  auto header(std::source_location const& where, Level level) {
+    (void) this;
+    (void) where;
+    (void) level;
+  }
+
+  template <typename T> auto write(T&& data, Level level) noexcept -> void {
+    (void) this;
+    (void) data;
+    (void) level;
+  }
+
+  auto modify(std::ostream& (*pfn)(std::ostream&), Level level) noexcept -> void {
+    (void) this;
+    (void) pfn;
+    (void) level;
+  }
+
+  auto footer(Level level) {
+    (void) this;
+    (void) level;
+  }
 
 private:
   cds::Array<LoggerOutput> _outputs;
@@ -142,18 +211,38 @@ protected:
     }
   }
 
+  auto modify(std::ostream& (*pfn)(std::ostream&), Level level) noexcept -> void {
+    for (auto& output : outputs()) {
+      if (output.allows(level)) {
+        output.output() << pfn;
+      }
+    }
+  }
+
   auto footer(Level level) { _footer(level); }
 
-  constexpr auto enableOptions(LogLevelFlags optionFlags) noexcept -> void {
+  constexpr auto enableOptions(LogOptionFlags optionFlags) noexcept -> void {
     _options |= addRequirements(optionFlags & logOptionsMask);
   }
 
-  constexpr auto disableOptions(LogLevelFlags optionFlags) noexcept -> void {
+  constexpr auto disableOptions(LogOptionFlags optionFlags) noexcept -> void {
     _options &= ~(removeRequirements(optionFlags & logOptionsMask));
   }
 
-  constexpr auto setOptions(LogLevelFlags optionFlags) noexcept -> void {
+  constexpr auto setOptions(LogOptionFlags optionFlags) noexcept -> void {
     _options = addRequirements(optionFlags & logOptionsMask);
+  }
+
+  constexpr auto enableOptions(LogOptionFlagBits optionFlag) noexcept -> void {
+    _options |= addRequirements(optionFlag & logOptionsMask);
+  }
+
+  constexpr auto disableOptions(LogOptionFlagBits optionFlag) noexcept -> void {
+    _options &= ~(removeRequirements(optionFlag & logOptionsMask));
+  }
+
+  constexpr auto setOptions(LogOptionFlagBits optionFlag) noexcept -> void {
+    _options = addRequirements(optionFlag & logOptionsMask);
   }
 
 private:
@@ -167,11 +256,15 @@ private:
   auto addName(std::ostream& out) const -> void;
   auto addLevel(std::ostream& out, Level level) const -> void;
   auto addThreadId(std::ostream& out) const -> void;
+  auto addHeaderSpacing(std::ostream& out) const -> void;
 
   static constexpr auto addRequirements(LogLevelFlags flags) noexcept -> LogLevelFlags {
     if ((flags & requireSourceLocation) != 0u) {
       flags |= LogOptionFlagBits::SourceLocation;
+    } else if ((flags & LogOptionFlagBits::SourceLocation) != 0u) {
+      flags |= LogOptionFlagBits::SourceLocationFile | LogOptionFlagBits::SourceLocationLine;
     }
+
     return flags;
   }
 
@@ -198,24 +291,35 @@ private:
 
 class Logger : protected meta::LoggerImpl<> {
 public:
+  using meta::LoggerImpl<>::Level;
+  using meta::LoggerImpl<>::OptionFlag;
+
   auto operator()(std::source_location const& location = std::source_location::current()) noexcept {
     return LogWriter {this, defaultLevel(), location};
   }
 
+  auto operator()(Level level, std::source_location const& location = std::source_location::current()) noexcept {
+    return LogWriter {this, level, location};
+  }
+
   template <typename... Outputs>
-    requires(sizeof...(Outputs) > 0
+    requires(sizeof...(Outputs) > 1
              && cds::meta::All<cds::meta::Bind<cds::meta::IsConvertible, cds::meta::Ph<1>, LoggerOutput>::Type,
                                Outputs...>::value)
-  static auto get(StringRef name, Outputs&&... outputs) noexcept -> Logger {
-    auto logger = get(name);
+  static auto get(StringRef name, Outputs&&... outputs) noexcept -> Logger& {
+    auto& logger = get(name);
     auto& outArr = logger.outputs();
-    outArr.clear();
-    outArr.insertAllOf(std::forward<Outputs>(outputs)...);
+
+    if (outArr.size() == 1u && &outArr[0u].output() == &defaultOutput()) {
+      outArr.clear();
+    }
+
+    outArr.insertAll(std::forward<Outputs>(outputs)...);
     return logger;
   }
 
   template <typename... Outputs>
-    requires(sizeof...(Outputs) > 0
+    requires(sizeof...(Outputs) > 1
              && cds::meta::All<cds::meta::Bind<cds::meta::IsConvertible, cds::meta::Ph<1>, LoggerOutput>::Type,
                                Outputs...>::value)
   static auto get(Outputs&&... outputs) noexcept -> Logger {
@@ -226,11 +330,21 @@ public:
     return logger;
   }
 
+  static auto get(StringRef name, std::ostream& out) noexcept -> Logger&;
   static auto get(StringRef name) noexcept -> Logger&;
+  static auto get(std::ostream& out) noexcept -> Logger;
   static auto get() noexcept -> Logger;
   static auto setDefaultOutput(std::ostream& out) noexcept -> void;
+  static auto defaultOutput() noexcept -> std::ostream&;
+
+  using meta::LoggerImpl<>::defaultOptionFlags;
 
   using meta::LoggerImpl<>::name;
+  using meta::LoggerImpl<>::outputs;
+  using meta::LoggerImpl<>::enableOptions;
+  using meta::LoggerImpl<>::disableOptions;
+  using meta::LoggerImpl<>::setOptions;
+  using meta::LoggerImpl<>::setDefaultLevel;
 
 private:
   class LogWriter {
@@ -244,6 +358,11 @@ private:
       return *this;
     }
 
+    auto& operator<<(std::ostream& (*pfn)(std::ostream&) ) {
+      _pLogger->modify(pfn, _level);
+      return *this;
+    }
+
     ~LogWriter() noexcept { _pLogger->footer(_level); }
 
   private:
@@ -252,8 +371,5 @@ private:
   };
 
   using meta::LoggerImpl<>::LoggerImpl;
-  using meta::LoggerImpl<>::enableOptions;
-  using meta::LoggerImpl<>::disableOptions;
-  using meta::LoggerImpl<>::setOptions;
 };
 } // namespace age

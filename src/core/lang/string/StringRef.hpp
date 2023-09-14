@@ -47,6 +47,7 @@ public:
 
   [[nodiscard]] auto find(char character) const noexcept -> cds::Index;
 
+  [[nodiscard]] auto sub(cds::Size offset) const noexcept -> StringRef;
   [[nodiscard]] auto sub(cds::Size offset, cds::Size length) const noexcept -> StringRef;
 
   [[nodiscard]] auto operator+(StringRef const& ref) const noexcept -> cds::String;
@@ -65,4 +66,10 @@ private:
   cds::Size _size {0u};
   using Utils = cds::StringUtils<char>;
 };
+
+inline auto ref(cds::String const& string) noexcept { return StringRef {string}; }
+inline auto ref(cds::StringView const& view) noexcept { return StringRef {view}; }
+inline auto ref(std::string const& string) noexcept { return StringRef {string}; }
+inline auto ref(std::string_view const& view) noexcept { return StringRef {view}; }
+inline auto ref(char const* string) noexcept { return StringRef {string}; }
 } // namespace age

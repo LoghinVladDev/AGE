@@ -35,6 +35,11 @@ public:
     (void) this;
     (void) out;
   }
+
+  auto get(Logger const& hint, Logger& whenDisabled) noexcept -> Logger& {
+    (void) hint;
+    return whenDisabled;
+  }
 };
 
 template <> class LoggerContainer<BoolConstant<true>> {
@@ -75,7 +80,7 @@ auto timestamp() {
   localtime_r(&asTimeT, &timeInfo);
 
   string asString(timeBufferSize, '\0');
-  asString.resize(std::strftime(asString.data(), timeBufferSize, "%d-%m-%Y", &timeInfo));
+  asString.resize(std::strftime(asString.data(), timeBufferSize, "%H:%M:%OS", &timeInfo));
   asString.resize(asString.length());
 
   return asString;
@@ -101,6 +106,13 @@ auto colour(LogLevelFlagBits level) {
     case Info: return "\033[1;37m";
   }
 }
+
+auto colourCompatibleOutput(std::ostream& out) {
+#if defined(__linux) | defined(__APPLE__)
+  return (&out == &cout) || (&out == &clog) && isatty(1);
+#endif
+  return false;
+}
 } // namespace
 
 namespace age {
@@ -116,6 +128,7 @@ auto LoggerImpl<BoolConstant<true>>::_header(source_location const& where, Level
       addName(out);
       addLevel(out, level);
       addThreadId(out);
+      addHeaderSpacing(out);
     }
   }
 }
@@ -131,6 +144,9 @@ auto LoggerImpl<BoolConstant<true>>::_footer(Level level) -> void {
 }
 
 auto LoggerImpl<BoolConstant<true>>::addColourHeader(ostream& out, Level level) const -> void {
+  if (!colourCompatibleOutput(out)) {
+    return;
+  }
   if (!optionEnabled(LogOptionFlagBits::OutputTerminalColour)) {
     return;
   }
@@ -138,6 +154,9 @@ auto LoggerImpl<BoolConstant<true>>::addColourHeader(ostream& out, Level level) 
 }
 
 auto LoggerImpl<BoolConstant<true>>::addEndColourMarker(ostream& out) const -> void {
+  if (!colourCompatibleOutput(out)) {
+    return;
+  }
   if (!optionEnabled(LogOptionFlagBits::OutputTerminalColour)) {
     return;
   }
@@ -166,12 +185,9 @@ auto LoggerImpl<BoolConstant<true>>::addLocation(ostream& out, source_location c
     if (!optionEnabled(flag)) {
       return;
     }
-    if (!skipFirst) {
-      sep.request();
-    }
-
-    out << data;
     sep.consume();
+    out << data;
+    sep.request();
   };
 
   out << "[";
@@ -226,17 +242,50 @@ auto LoggerImpl<BoolConstant<true>>::addThreadId(ostream& out) const -> void {
 #if CI_FORMAT_AVAILABLE
   out << std::format("0x{:x}]", Thread::currentThreadID());
 #else
-  out << "0x" << std::hex << Thread::currentThreadID();
+  out << "0x" << std::hex << Thread::currentThreadID() << std::dec << "]";
 #endif
+}
+
+auto LoggerImpl<BoolConstant<true>>::addHeaderSpacing(std::ostream& out) const -> void {
+  constexpr auto const visibleOptionsMask = LogOptionFlagBits::InfoPrefix | LogOptionFlagBits::SourceLocation
+      | LogOptionFlagBits::SourceLocationFile | LogOptionFlagBits::SourceLocationFunction
+      | LogOptionFlagBits::SourceLocationLine | LogOptionFlagBits::SourceLocationColumn | LogOptionFlagBits::Timestamp
+      | LogOptionFlagBits::LoggerName | LogOptionFlagBits::LogLevel | LogOptionFlagBits::ThreadId;
+
+  if ((visibleOptionsMask & _options) == 0u) {
+    return;
+  }
+  out << " ";
 }
 } // namespace meta
 
 auto Logger::get() noexcept -> Logger { return Logger {"anonymous_logger", container().defaultOut()}; }
 
-auto Logger::get(age::StringRef name) noexcept -> Logger& {
+auto Logger::get(StringRef name) noexcept -> Logger& {
   static auto whenDisabled = get();
   return container().get(Logger {name, container().defaultOut()}, whenDisabled);
 }
 
+auto Logger::get(ostream& out) noexcept -> Logger {
+  auto logger = get();
+  auto& outArr = logger.outputs();
+  outArr.clear();
+  outArr.emplace(out);
+  return logger;
+}
+
+auto Logger::get(StringRef name, ostream& out) noexcept -> Logger& {
+  auto& logger = get(name);
+  auto& outArr = logger.outputs();
+
+  if (outArr.size() == 1u && &outArr[0u].output() == &defaultOutput()) {
+    outArr.clear();
+  }
+
+  outArr.emplace(out);
+  return logger;
+}
+
 auto Logger::setDefaultOutput(ostream& out) noexcept -> void { container().setDefaultOut(out); }
+auto Logger::defaultOutput() noexcept -> ostream& { return container().defaultOut(); }
 } // namespace age

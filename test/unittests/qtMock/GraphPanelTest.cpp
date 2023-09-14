@@ -16,5 +16,6 @@ struct TestGraphPanel : GraphPanel {
 };
 TEST(GraphPanelTest, mousePressEvent) {
   TestGraphPanel t;
-  t.mousePressEvent({});
+  QMouseEvent e;
+  t.mousePressEvent(&e);
 }

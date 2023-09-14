@@ -202,6 +202,34 @@ TEST(StringRefTest, dropFront) {
   ASSERT_EQ(ref.size(), 0u);
 }
 
+TEST(StringRefTest, sub1Arg) {
+  StringRef ref = "abcd";
+
+  ref = ref.sub(0);
+  ASSERT_STREQ(ref.data(), "abcd");
+  ASSERT_EQ(ref.size(), 4u);
+
+  ref = ref.sub(1);
+  ASSERT_STREQ(ref.data(), "bcd");
+  ASSERT_EQ(ref.size(), 3u);
+
+  ref = ref.sub(2);
+  ASSERT_STREQ(ref.data(), "d");
+  ASSERT_EQ(ref.size(), 1u);
+
+  ref = ref.sub(3);
+  ASSERT_EQ(ref.data(), nullptr);
+  ASSERT_EQ(ref.size(), 0u);
+
+  ref = ref.sub(1);
+  ASSERT_EQ(ref.data(), nullptr);
+  ASSERT_EQ(ref.size(), 0u);
+
+  ref = ref.sub(0);
+  ASSERT_EQ(ref.data(), nullptr);
+  ASSERT_EQ(ref.size(), 0u);
+}
+
 TEST(StringRefTest, dropBack) {
   StringRef ref = "abcd";
 

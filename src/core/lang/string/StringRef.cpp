@@ -121,6 +121,8 @@ auto StringRef::sub(Size offset, Size length) const noexcept -> StringRef {
   return dropFront(offset).takeFront(length);
 }
 
+auto StringRef::sub(Size offset) const noexcept -> StringRef { return dropFront(offset); }
+
 auto StringRef::operator+(StringRef const& ref) const noexcept -> String {
   String result;
   result.resize(size() + ref.size() + 1);
