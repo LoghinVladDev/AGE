@@ -26,17 +26,17 @@ template <typename = LoggingEnabled> class LoggerContainer {};
 
 template <> class LoggerContainer<BoolConstant<false>> {
 public:
-  [[nodiscard]] auto& defaultOut() const noexcept {
+  [[nodiscard]] [[maybe_unused]] auto& defaultOut() const noexcept {
     (void) this;
     return cout;
   }
 
-  auto setDefaultOut(ostream const& out) const noexcept {
+  [[maybe_unused]] auto setDefaultOut(ostream const& out) const noexcept {
     (void) this;
     (void) out;
   }
 
-  auto get(Logger const& hint, Logger& whenDisabled) noexcept -> Logger& {
+  [[maybe_unused]] auto get(Logger const& hint, Logger& whenDisabled) noexcept -> Logger& {
     (void) hint;
     return whenDisabled;
   }
@@ -107,11 +107,12 @@ auto colour(LogLevelFlagBits level) {
   }
 }
 
-auto colourCompatibleOutput(std::ostream& out) {
+auto colourCompatibleOutput(std::ostream const& out) {
 #if defined(__linux) | defined(__APPLE__)
   return (&out == &cout) || (&out == &clog) && isatty(1);
-#endif
+#else
   return false;
+#endif
 }
 } // namespace
 
@@ -181,7 +182,7 @@ auto LoggerImpl<BoolConstant<true>>::addLocation(ostream& out, source_location c
     ostream& out;
   } sep {false, out};
 
-  auto writeLocationPart = [this, &sep, &out](bool skipFirst, auto flag, auto data) {
+  auto writeLocationPart = [this, &sep, &out](auto flag, auto data) {
     if (!optionEnabled(flag)) {
       return;
     }
@@ -191,10 +192,10 @@ auto LoggerImpl<BoolConstant<true>>::addLocation(ostream& out, source_location c
   };
 
   out << "[";
-  writeLocationPart(true, LogOptionFlagBits::SourceLocationFile, where.file_name());
-  writeLocationPart(false, LogOptionFlagBits::SourceLocationFunction, where.function_name());
-  writeLocationPart(false, LogOptionFlagBits::SourceLocationLine, where.line());
-  writeLocationPart(false, LogOptionFlagBits::SourceLocationColumn, where.column());
+  writeLocationPart(LogOptionFlagBits::SourceLocationFile, where.file_name());
+  writeLocationPart(LogOptionFlagBits::SourceLocationFunction, where.function_name());
+  writeLocationPart(LogOptionFlagBits::SourceLocationLine, where.line());
+  writeLocationPart(LogOptionFlagBits::SourceLocationColumn, where.column());
   out << "]";
 }
 
@@ -247,12 +248,12 @@ auto LoggerImpl<BoolConstant<true>>::addThreadId(ostream& out) const -> void {
 }
 
 auto LoggerImpl<BoolConstant<true>>::addHeaderSpacing(std::ostream& out) const -> void {
-  constexpr auto const visibleOptionsMask = LogOptionFlagBits::InfoPrefix | LogOptionFlagBits::SourceLocation
-      | LogOptionFlagBits::SourceLocationFile | LogOptionFlagBits::SourceLocationFunction
-      | LogOptionFlagBits::SourceLocationLine | LogOptionFlagBits::SourceLocationColumn | LogOptionFlagBits::Timestamp
-      | LogOptionFlagBits::LoggerName | LogOptionFlagBits::LogLevel | LogOptionFlagBits::ThreadId;
+  using enum age::meta::LogOptionFlagBits;
 
-  if ((visibleOptionsMask & _options) == 0u) {
+  if (constexpr auto const visibleOptionsMask = InfoPrefix | SourceLocation | SourceLocationFile
+          | SourceLocationFunction | SourceLocationLine | SourceLocationColumn | Timestamp | LoggerName | LogLevel
+          | ThreadId;
+      (visibleOptionsMask & _options) == 0u) {
     return;
   }
   out << " ";

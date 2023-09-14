@@ -135,7 +135,7 @@ template <> Validator validator<Logger::OptionFlag::InfoPrefix>() {
 }
 
 auto conditionedPrefix(auto prefixStr, auto after) {
-  return (Glob::prefix ? age::ref((age::ref(prefixStr) + " = ")) : age::ref("")) + after;
+  return (Glob::prefix ? age::ref(age::ref(prefixStr) + " = ") : age::ref("")) + after;
 }
 
 template <> Validator validator<Logger::OptionFlag::LoggerName>() {
@@ -282,14 +282,15 @@ TEST(LoggerTest, levelSwitch) {
   };
 
   auto testSwitch = [&testImplicitLevel, &testExplicitLevel](Logger::Level expectedImplicit) {
+    using enum age::meta::LogLevelFlagBits;
     testImplicitLevel(expectedImplicit);
-    testExplicitLevel(Logger::Level::Warning);
+    testExplicitLevel(Warning);
     testImplicitLevel(expectedImplicit);
-    testExplicitLevel(Logger::Level::Debug);
+    testExplicitLevel(Debug);
     testImplicitLevel(expectedImplicit);
-    testExplicitLevel(Logger::Level::Error);
+    testExplicitLevel(Error);
     testImplicitLevel(expectedImplicit);
-    testExplicitLevel(Logger::Level::Info);
+    testExplicitLevel(Info);
     testImplicitLevel(expectedImplicit);
   };
 
@@ -485,10 +486,16 @@ TEST(LoggerTest, namedLogger) {
 
   // created for SFINAE test
   auto logger5 = Logger::get(outbuf3, outbuf2);
-  auto& logger6 = Logger::get("logger1", outbuf3, outbuf1);
+  auto const& logger6 = Logger::get("logger1", outbuf3, outbuf1);
   auto logger7 = Logger::get(outbuf3, outbuf2, outbuf1);
-  auto& logger8 = Logger::get("logger1", outbuf3, outbuf1, outbuf1);
+  auto const& logger8 = Logger::get("logger1", outbuf3, outbuf1, outbuf1);
   auto logger9 = Logger::get(outbuf1);
+
+  (void) logger5;
+  (void) logger6;
+  (void) logger7;
+  (void) logger8;
+  (void) logger9;
 
   ASSERT_NE(&logger1, &logger2);
   ASSERT_EQ(&logger1, &logger3);
@@ -524,10 +531,11 @@ TEST(LoggerTest, timestampCoverage) {
 }
 
 TEST(LoggerTest, otherCoverage) {
+  using enum age::meta::LogOptionFlagBits;
   /// Other functions that just require coverage, do not make a difference
   auto l = Logger::get();
-  l.enableOptions(Logger::OptionFlag::SourceLocation | Logger::OptionFlag::SourceLocationFunction);
-  l.disableOptions(Logger::OptionFlag::SourceLocationFunction);
+  l.enableOptions(SourceLocation | SourceLocationFunction);
+  l.disableOptions(SourceLocationFunction);
   auto const& l2 = Logger::get("test");
   auto const& l3 = Logger::get("test", cout, cout);
   (void) l2;

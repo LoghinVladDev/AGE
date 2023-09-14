@@ -109,74 +109,6 @@ protected:
   auto& outputs() noexcept { return _outputs; }
   [[nodiscard]] auto const& outputs() const noexcept { return _outputs; }
 
-  [[nodiscard]] constexpr auto name() const noexcept {
-    (void) this;
-    return "anonymous_logger";
-  }
-
-  [[nodiscard]] constexpr auto defaultLevel() const noexcept {
-    (void) this;
-    return Level::Info;
-  }
-
-  [[nodiscard]] auto setDefaultLevel(Level level) noexcept {
-    (void) this;
-    (void) level;
-  }
-
-  constexpr auto enableOptions(LogOptionFlags optionFlags) noexcept -> void {
-    (void) this;
-    (void) optionFlags;
-  }
-
-  constexpr auto disableOptions(LogOptionFlags optionFlags) noexcept -> void {
-    (void) this;
-    (void) optionFlags;
-  }
-
-  constexpr auto setOptions(LogOptionFlags optionFlags) noexcept -> void {
-    (void) this;
-    (void) optionFlags;
-  }
-
-  constexpr auto enableOptions(LogOptionFlagBits optionFlag) noexcept -> void {
-    (void) this;
-    (void) optionFlag;
-  }
-
-  constexpr auto disableOptions(LogOptionFlagBits optionFlag) noexcept -> void {
-    (void) this;
-    (void) optionFlag;
-  }
-
-  constexpr auto setOptions(LogOptionFlagBits optionFlag) noexcept -> void {
-    (void) this;
-    (void) optionFlag;
-  }
-
-  auto header(std::source_location const& where, Level level) {
-    (void) this;
-    (void) where;
-    (void) level;
-  }
-
-  template <typename T> auto write(T&& data, Level level) noexcept -> void {
-    (void) this;
-    (void) data;
-    (void) level;
-  }
-
-  auto modify(std::ostream& (*pfn)(std::ostream&), Level level) noexcept -> void {
-    (void) this;
-    (void) pfn;
-    (void) level;
-  }
-
-  auto footer(Level level) {
-    (void) this;
-    (void) level;
-  }
-
 private:
   cds::Array<LoggerOutput> _outputs;
 };
@@ -188,6 +120,74 @@ protected:
   LoggerImpl(StringRef name, LoggerOutput out) noexcept : LoggerImplBase() {
     (void) out;
     (void) name;
+  }
+
+  [[nodiscard]] constexpr auto name() const noexcept {
+    (void) this;
+    return "anonymous_logger";
+  }
+
+  [[nodiscard]] constexpr auto defaultLevel() const noexcept {
+    (void) this;
+    return Level::Info;
+  }
+
+  [[nodiscard]] auto setDefaultLevel(Level level) const noexcept {
+    (void) this;
+    (void) level;
+  }
+
+  constexpr auto enableOptions(LogOptionFlags optionFlags) const noexcept -> void {
+    (void) this;
+    (void) optionFlags;
+  }
+
+  constexpr auto disableOptions(LogOptionFlags optionFlags) const noexcept -> void {
+    (void) this;
+    (void) optionFlags;
+  }
+
+  constexpr auto setOptions(LogOptionFlags optionFlags) const noexcept -> void {
+    (void) this;
+    (void) optionFlags;
+  }
+
+  constexpr auto enableOptions(LogOptionFlagBits optionFlag) const noexcept -> void {
+    (void) this;
+    (void) optionFlag;
+  }
+
+  constexpr auto disableOptions(LogOptionFlagBits optionFlag) const noexcept -> void {
+    (void) this;
+    (void) optionFlag;
+  }
+
+  constexpr auto setOptions(LogOptionFlagBits optionFlag) const noexcept -> void {
+    (void) this;
+    (void) optionFlag;
+  }
+
+  auto header(std::source_location const& where, Level level) const noexcept {
+    (void) this;
+    (void) where;
+    (void) level;
+  }
+
+  template <typename T> auto write(T&& data, Level level) const noexcept -> void {
+    (void) this;
+    (void) data;
+    (void) level;
+  }
+
+  auto modify(std::ostream& (*pfn)(std::ostream&), Level level) const noexcept -> void {
+    (void) this;
+    (void) pfn;
+    (void) level;
+  }
+
+  auto footer(Level level) const {
+    (void) this;
+    (void) level;
   }
 };
 
@@ -259,10 +259,11 @@ private:
   auto addHeaderSpacing(std::ostream& out) const -> void;
 
   static constexpr auto addRequirements(LogLevelFlags flags) noexcept -> LogLevelFlags {
+    using enum age::meta::LogOptionFlagBits;
     if ((flags & requireSourceLocation) != 0u) {
-      flags |= LogOptionFlagBits::SourceLocation;
-    } else if ((flags & LogOptionFlagBits::SourceLocation) != 0u) {
-      flags |= LogOptionFlagBits::SourceLocationFile | LogOptionFlagBits::SourceLocationLine;
+      flags |= SourceLocation;
+    } else if ((flags & SourceLocation) != 0u) {
+      flags |= SourceLocationFile | SourceLocationLine;
     }
 
     return flags;
