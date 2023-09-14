@@ -100,8 +100,8 @@ template <Logger::OptionFlag... flags> auto flagTest() {
   Glob::name = logger.name();
   logger.setOptions((flags | ...));
   logger() << "test";
-  Glob::lineNo = source_location().line() - 1;
-  Glob::sourceLocation = source_location();
+  Glob::lineNo = source_location::current().line() - 1;
+  Glob::sourceLocation = source_location::current();
   auto buf = String(outbuf.str());
 #ifdef NDEBUG
   return true;
@@ -111,7 +111,7 @@ template <Logger::OptionFlag... flags> auto flagTest() {
 
 template <> Validator validator<Logger::OptionFlag::SourceLocation>() {
   return [](String& buf) {
-    return isolateAndRemoveMeta(buf, age::ref(Glob::sourceLocation.file_name()) + ":" + Glob::sourceLocation.line());
+    return isolateAndRemoveMeta(buf, age::ref(Glob::sourceLocation.file_name()) + ":" + Glob::lineNo);
   };
 }
 
@@ -305,6 +305,7 @@ TEST(LoggerTest, levelSwitch) {
 }
 
 TEST(LoggerTest, defaultOut) {
+  using enum age::meta::LogLevelFlagBits;
   stringstream out;
   auto logger = Logger::get();
   logger.disableOptions(Logger::defaultOptionFlags);
@@ -313,13 +314,13 @@ TEST(LoggerTest, defaultOut) {
   ASSERT_TRUE(out.str().empty());
 
   logger.enableOptions(Logger::OptionFlag::OutputTerminalColour);
-  logger(Logger::Level::Info) << "<Text outputted part of test, to be ignored>";
+  logger(Info) << "<Text outputted part of test, to be ignored>";
   ASSERT_TRUE(out.str().empty());
-  logger(Logger::Level::Warning) << "<Text outputted part of test, to be ignored>";
+  logger(Warning) << "<Text outputted part of test, to be ignored>";
   ASSERT_TRUE(out.str().empty());
-  logger(Logger::Level::Debug) << "<Text outputted part of test, to be ignored>";
+  logger(Debug) << "<Text outputted part of test, to be ignored>";
   ASSERT_TRUE(out.str().empty());
-  logger(Logger::Level::Error) << "<Text outputted part of test, to be ignored>";
+  logger(Error) << "<Text outputted part of test, to be ignored>";
   ASSERT_TRUE(out.str().empty());
 
   Logger::setDefaultOutput(out);
