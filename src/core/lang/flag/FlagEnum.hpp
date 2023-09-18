@@ -7,6 +7,8 @@
 #include <CDS/meta/TypeTraits>
 
 namespace age::meta {
+
+/// \brief Meta-Type used to identify whether a given specialized Enum type is a Flag Enum to generate biwise flag operators for
 template <typename Enum>
   requires(cds::meta::IsEnum<Enum>::value)
 struct FlagEnum : cds::meta::FalseType {

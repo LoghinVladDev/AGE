@@ -73,7 +73,8 @@ public:
   [[nodiscard]] constexpr auto const& output() const noexcept { return *_pOutput; }
 
   [[nodiscard]] constexpr auto allows(meta::LogLevelFlags levels) const noexcept {
-    return (_filter & levels & mask) != 0u;
+    assert((levels == (filters & mask)) && "Level requested outside valid Log Level values");
+    return (_filter & levels) != 0u;
   }
 
   [[nodiscard]] constexpr auto allows(meta::LogLevelFlagBits level) const noexcept {
