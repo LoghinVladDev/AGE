@@ -45,6 +45,7 @@ set(
     CORE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/core/lang/string/StringRef.cpp
     ${CMAKE_SOURCE_DIR}/src/core/lang/filesystem/PathAwareFstream.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/logging/Logger.cpp
     src/core/intern/QtDefines.hpp
 )
 

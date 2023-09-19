@@ -50,6 +50,8 @@ if(DEFINED QT_VERSION)
       qtMock/GraphPanelTest.cpp
       qtMock/VertexTest.cpp
       SettingsRegistryTest.cpp
+      LoggerTest.cpp
+      FlagEnumTest.cpp
   )
 
   add_executable(

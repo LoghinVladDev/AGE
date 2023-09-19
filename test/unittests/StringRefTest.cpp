@@ -202,6 +202,34 @@ TEST(StringRefTest, dropFront) {
   ASSERT_EQ(ref.size(), 0u);
 }
 
+TEST(StringRefTest, sub1Arg) {
+  StringRef ref = "abcd";
+
+  ref = ref.sub(0);
+  ASSERT_STREQ(ref.data(), "abcd");
+  ASSERT_EQ(ref.size(), 4u);
+
+  ref = ref.sub(1);
+  ASSERT_STREQ(ref.data(), "bcd");
+  ASSERT_EQ(ref.size(), 3u);
+
+  ref = ref.sub(2);
+  ASSERT_STREQ(ref.data(), "d");
+  ASSERT_EQ(ref.size(), 1u);
+
+  ref = ref.sub(3);
+  ASSERT_EQ(ref.data(), nullptr);
+  ASSERT_EQ(ref.size(), 0u);
+
+  ref = ref.sub(1);
+  ASSERT_EQ(ref.data(), nullptr);
+  ASSERT_EQ(ref.size(), 0u);
+
+  ref = ref.sub(0);
+  ASSERT_EQ(ref.data(), nullptr);
+  ASSERT_EQ(ref.size(), 0u);
+}
+
 TEST(StringRefTest, dropBack) {
   StringRef ref = "abcd";
 
@@ -642,4 +670,24 @@ TEST(StringRef, cmpSH) {
   ASSERT_EQ("abc" <=> r, lt);
   ASSERT_EQ("abcd" <=> r, eq);
   ASSERT_EQ("abcde" <=> r, gt);
+}
+
+TEST(StringTest, refTestCoverage) {
+  String cdsStr;
+  StringView cdsView;
+  std::string stdStr;
+  std::string_view stdView;
+  char const* cstr = "";
+
+  auto const r1 = ref(cdsStr);
+  auto const r2 = ref(cdsView);
+  auto const r3 = ref(stdStr);
+  auto const r4 = ref(stdView);
+  auto const r5 = ref(cstr);
+
+  (void) r1;
+  (void) r2;
+  (void) r3;
+  (void) r4;
+  (void) r5;
 }
