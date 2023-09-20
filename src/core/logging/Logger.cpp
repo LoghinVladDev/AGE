@@ -44,7 +44,7 @@ public:
     return whenDisabled;
   }
 
-  auto reg(std::ostream& out) noexcept { return makeTuple(&out, static_cast<Mutex*>(nullptr)); }
+  [[maybe_unused]] auto reg(std::ostream& out) const noexcept { return makeTuple(&out, static_cast<Mutex*>(nullptr)); }
 };
 
 template <> class LoggerContainer<BoolConstant<true>> {
@@ -59,13 +59,13 @@ public:
   }
 
   auto reg(std::ostream& out) noexcept {
-    auto emplace = [this](auto& out) -> auto& {
+    auto emplace = [this](auto& newOut) -> auto& {
       for (auto& entry : locks) {
-        if (entry.get<0>() == &out) {
+        if (entry.get<0>() == &newOut) {
           return entry;
         }
       }
-      return locks.emplace(makeTuple(&out, makeUnique<Mutex>()));
+      return locks.emplace(makeTuple(&newOut, makeUnique<Mutex>()));
     };
 
     Lock lock(masterLock);
@@ -148,8 +148,8 @@ template <> struct LockConfig<BoolConstant<true>> {
 };
 
 template <> struct LockConfig<BoolConstant<false>> {
-  static auto lock(cds::Mutex const* lock) { (void) lock; }
-  static auto unlock(cds::Mutex const* lock) { (void) lock; }
+  [[maybe_unused]] static auto lock(cds::Mutex const* lock) { (void) lock; }
+  [[maybe_unused]] static auto unlock(cds::Mutex const* lock) { (void) lock; }
 };
 } // namespace
 
