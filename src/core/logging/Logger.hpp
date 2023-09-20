@@ -70,6 +70,7 @@ public:
   LoggerOutput(std::ostream& out, FilterFlagBits filterLevel) noexcept :
       LoggerOutput(out, static_cast<FilterFlags>(filterLevel)) {}
 
+  LoggerOutput(LoggerOutput const& output) noexcept : _out(output._out), _filter(output._filter) {}
   LoggerOutput(LoggerOutput&& output) noexcept : _out(std::move(output._out)), _filter(output._filter) {}
 
   [[nodiscard]] auto outData() noexcept { return LockedOutput(_out); }
@@ -196,7 +197,7 @@ protected:
     (void) data;
   }
 
-  auto modify(std::ostream const& out, std::ostream& (*pfn)(std::ostream&)) const noexcept -> void {
+  auto modify(std::ostream const& out, std::ostream& (*pfn)(std::ostream&) ) const noexcept -> void {
     (void) this;
     (void) out;
     (void) pfn;
@@ -220,15 +221,8 @@ protected:
   LoggerImpl(StringRef name, LoggerOutput&& out) noexcept : LoggerImplBase(std::move(out)), _name(name) {}
 
   auto header(std::ostream& out, std::source_location const& where, Level level) const { _header(out, where, level); }
-
-  template <typename T> auto write(std::ostream& out, T&& data) const noexcept -> void {
-    out << std::forward<T>(data);
-  }
-
-  auto modify(std::ostream& out, std::ostream& (*pfn)(std::ostream&)) const noexcept -> void {
-    out << pfn;
-  }
-
+  template <typename T> auto write(std::ostream& out, T&& data) const noexcept -> void { out << std::forward<T>(data); }
+  auto modify(std::ostream& out, std::ostream& (*pfn)(std::ostream&) ) const noexcept -> void { out << pfn; }
   auto footer(std::string const& contents, Level level) { _footer(contents, level); }
 
   constexpr auto enableOptions(LogOptionFlags optionFlags) noexcept -> void {
