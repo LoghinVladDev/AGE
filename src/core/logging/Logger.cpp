@@ -118,28 +118,26 @@ auto colourCompatibleOutput(std::ostream const& out) {
 
 namespace age {
 namespace meta {
-auto LoggerImpl<BoolConstant<true>>::_header(source_location const& where, Level level) -> void {
-  auto time = timestamp();
+auto LoggerImpl<BoolConstant<true>>::_header(std::ostream& out, source_location const& where, Level level) const
+    -> void {
+  addLocation(out, where);
+  addTimestamp(out, timestamp());
+  addName(out);
+  addLevel(out, level);
+  addThreadId(out);
+  addHeaderSpacing(out);
+}
+
+auto LoggerImpl<BoolConstant<true>>::_footer(std::string const& contents, Level level) -> void {
   for (auto& output : outputs()) {
     if (output.allows(level)) {
       auto& out = output.output();
       addColourHeader(out, level);
-      addLocation(out, where);
-      addTimestamp(out, time);
-      addName(out);
-      addLevel(out, level);
-      addThreadId(out);
-      addHeaderSpacing(out);
-    }
-  }
-}
-
-auto LoggerImpl<BoolConstant<true>>::_footer(Level level) -> void {
-  for (auto& output : outputs()) {
-    if (output.allows(level)) {
-      auto& out = output.output();
+      out << contents;
+      if (!contents.empty()) {
+        out << std::endl;
+      }
       addEndColourMarker(out);
-      out << endl;
     }
   }
 }

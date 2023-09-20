@@ -168,26 +168,30 @@ protected:
     (void) optionFlag;
   }
 
-  auto header(std::source_location const& where, Level level) const noexcept {
+  auto header(std::ostream& out, std::source_location const& where, Level level) const noexcept {
     (void) this;
+    (void) out;
     (void) where;
     (void) level;
   }
 
-  template <typename T> auto write(T&& data, Level level) const noexcept -> void {
+  template <typename T> auto write(std::ostream& out, T&& data, Level level) const noexcept -> void {
     (void) this;
+    (void) out;
     (void) data;
     (void) level;
   }
 
-  auto modify(std::ostream& (*pfn)(std::ostream&), Level level) const noexcept -> void {
+  auto modify(std::ostream& out, std::ostream& (*pfn)(std::ostream&), Level level) const noexcept -> void {
     (void) this;
+    (void) out;
     (void) pfn;
     (void) level;
   }
 
-  auto footer(Level level) const {
+  auto footer(std::string const& contents, Level level) const {
     (void) this;
+    (void) contents;
     (void) level;
   }
 };
@@ -202,25 +206,17 @@ public:
 protected:
   LoggerImpl(StringRef name, LoggerOutput out) noexcept : LoggerImplBase(out), _name(name) {}
 
-  auto header(std::source_location const& where, Level level) { _header(where, level); }
+  auto header(std::ostream& out, std::source_location const& where, Level level) const { _header(out, where, level); }
 
-  template <typename T> auto write(T&& data, Level level) noexcept -> void {
-    for (auto& output : outputs()) {
-      if (output.allows(level)) {
-        output.output() << std::forward<T>(data);
-      }
-    }
+  template <typename T> auto write(std::ostream& out, T&& data, Level level) const noexcept -> void {
+    out << std::forward<T>(data);
   }
 
-  auto modify(std::ostream& (*pfn)(std::ostream&), Level level) noexcept -> void {
-    for (auto& output : outputs()) {
-      if (output.allows(level)) {
-        output.output() << pfn;
-      }
-    }
+  auto modify(std::ostream& out, std::ostream& (*pfn)(std::ostream&), Level level) const noexcept -> void {
+    out << pfn;
   }
 
-  auto footer(Level level) { _footer(level); }
+  auto footer(std::string const& contents, Level level) { _footer(contents, level); }
 
   constexpr auto enableOptions(LogOptionFlags optionFlags) noexcept -> void {
     _options |= addRequirements(optionFlags & logOptionsMask);
@@ -247,8 +243,8 @@ protected:
   }
 
 private:
-  auto _header(std::source_location const& where, Level level) -> void;
-  auto _footer(Level level) -> void;
+  auto _header(std::ostream& out, std::source_location const& where, Level level) const -> void;
+  auto _footer(std::string const& contents, Level level) -> void;
 
   auto addColourHeader(std::ostream& out, Level level) const -> void;
   auto addEndColourMarker(std::ostream& out) const -> void;
@@ -352,24 +348,25 @@ private:
   class LogWriter {
   public:
     LogWriter(Logger* pLogger, Level level, std::source_location const& location) : _pLogger(pLogger), _level(level) {
-      _pLogger->header(location, level);
+      _pLogger->header(_localBuffer, location, level);
     }
 
     template <typename T> auto& operator<<(T&& data) {
-      _pLogger->write(std::forward<T>(data), _level);
+      _pLogger->write(_localBuffer, std::forward<T>(data), _level);
       return *this;
     }
 
     auto& operator<<(std::ostream& (*pfn)(std::ostream&) ) {
-      _pLogger->modify(pfn, _level);
+      _pLogger->modify(_localBuffer, pfn, _level);
       return *this;
     }
 
-    ~LogWriter() noexcept { _pLogger->footer(_level); }
+    ~LogWriter() noexcept { _pLogger->footer(_localBuffer.str(), _level); }
 
   private:
     Logger* _pLogger;
     Level _level;
+    std::stringstream _localBuffer;
   };
 
   using meta::LoggerImpl<>::LoggerImpl;
