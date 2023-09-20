@@ -70,8 +70,9 @@ public:
   LoggerOutput(std::ostream& out, FilterFlagBits filterLevel) noexcept :
       LoggerOutput(out, static_cast<FilterFlags>(filterLevel)) {}
 
-  LoggerOutput(LoggerOutput const& output) noexcept : _out(output._out), _filter(output._filter) {}
+  LoggerOutput(LoggerOutput const& output) noexcept = default;
   LoggerOutput(LoggerOutput&& output) noexcept : _out(std::move(output._out)), _filter(output._filter) {}
+  ~LoggerOutput() noexcept = default;
 
   [[nodiscard]] auto outData() noexcept { return LockedOutput(_out); }
 
@@ -90,6 +91,8 @@ private:
   class LockedOutput {
   public:
     explicit LockedOutput(OutData& out);
+    LockedOutput(LockedOutput const&) = delete;
+    LockedOutput(LockedOutput&&) = delete;
     ~LockedOutput();
 
     [[nodiscard]] constexpr auto& output() noexcept { return *_out.get<0>(); }
@@ -122,7 +125,7 @@ protected:
   using OptionFlag = LogOptionFlagBits;
 
   LoggerImplBase() noexcept = default;
-  explicit LoggerImplBase(LoggerOutput out) noexcept : _outputs(1u, out) {}
+  explicit LoggerImplBase(LoggerOutput const& out) noexcept : _outputs(1u, out) {}
   auto& outputs() noexcept { return _outputs; }
   [[nodiscard]] auto const& outputs() const noexcept { return _outputs; }
 
