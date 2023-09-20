@@ -434,19 +434,6 @@ TEST(LoggerTest, isolation) {
   ASSERT_FALSE(contains(out2, "test"));
 }
 
-TEST(LoggerTest, constOutputs) {
-  stringstream sb1;
-  stringstream sb2;
-  stringstream sb3;
-  auto l = Logger::get();
-  l.outputs() = {sb1, sb2};
-  auto const& cl = l;
-  ASSERT_EQ(cl.outputs().size(), 2);
-  ASSERT_TRUE(cl.outputs().any([&sb1](auto const& l) { return &l.output() == &sb1; }));
-  ASSERT_TRUE(cl.outputs().any([&sb2](auto const& l) { return &l.output() == &sb2; }));
-  ASSERT_FALSE(cl.outputs().any([&sb3](auto const& l) { return &l.output() == &sb3; }));
-}
-
 TEST(LoggerTest, naming) {
   auto const& logger = Logger::get("testLog");
   ASSERT_EQ(logger.name(), "testLog");
@@ -782,19 +769,6 @@ TEST(LoggerTest, isolation) {
   ASSERT_TRUE(out2.str().empty());
   ASSERT_FALSE(contains(out1, "test"));
   ASSERT_FALSE(contains(out2, "test"));
-}
-
-TEST(LoggerTest, constOutputs) {
-  stringstream sb1;
-  stringstream sb2;
-  stringstream sb3;
-  auto l = Logger::get();
-  l.outputs() = {sb1, sb2};
-  auto const& cl = l;
-  ASSERT_EQ(cl.outputs().size(), 2);
-  ASSERT_TRUE(cl.outputs().any([&sb1](auto const& l) { return &l.output() == &sb1; }));
-  ASSERT_TRUE(cl.outputs().any([&sb2](auto const& l) { return &l.output() == &sb2; }));
-  ASSERT_FALSE(cl.outputs().any([&sb3](auto const& l) { return &l.output() == &sb3; }));
 }
 
 TEST(LoggerTest, naming) {

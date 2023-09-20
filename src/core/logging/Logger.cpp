@@ -6,6 +6,9 @@
 
 #include <chrono>
 
+#include <CDS/HashMap>
+#include <CDS/threading/Lock>
+
 #define CI_FORMAT_AVAILABLE false
 
 #if defined(__cpp_lib_format) && __cpp_lib_format > 202207l && CI_FORMAT_AVAILABLE
@@ -40,6 +43,8 @@ public:
     (void) hint;
     return whenDisabled;
   }
+
+  auto reg(std::ostream& out) noexcept { return makeTuple(&out, static_cast<Mutex*>(nullptr)); }
 };
 
 template <> class LoggerContainer<BoolConstant<true>> {
@@ -49,12 +54,32 @@ public:
 
   auto get(Logger&& hint, Logger const& whenDisabled) noexcept -> Logger& {
     (void) whenDisabled;
+    Lock lock(masterLock);
     return _loggers.emplace(hint.name(), std::move(hint)).value();
+  }
+
+  auto reg(std::ostream& out) noexcept {
+    auto emplace = [this](auto& out) -> auto& {
+      for (auto& entry : locks) {
+        if (entry.get<0>() == &out) {
+          return entry;
+        }
+      }
+      return locks.emplace(makeTuple(&out, makeUnique<Mutex>()));
+    };
+
+    Lock lock(masterLock);
+    auto& entry = emplace(out);
+    return makeTuple(entry.get<0>(), entry.get<1>().get());
   }
 
 private:
   ostream* _pDefaultOut {&cout};
   TreeMap<StringRef, Logger> _loggers;
+
+  // TODO: HashMap fails with ValueType with deleted CopyCtor.
+  Array<Tuple<ostream*, UniquePointer<Mutex>>> locks;
+  Mutex masterLock;
 };
 
 auto& container() noexcept {
@@ -114,6 +139,18 @@ auto colourCompatibleOutput(std::ostream const& out) {
   return false;
 #endif
 }
+
+template <typename = LoggingEnabled> struct LockConfig {};
+
+template <> struct LockConfig<BoolConstant<true>> {
+  static auto lock(cds::Mutex* lock) { lock->lock(); }
+  static auto unlock(cds::Mutex* lock) { lock->unlock(); }
+};
+
+template <> struct LockConfig<BoolConstant<false>> {
+  static auto lock(cds::Mutex const* lock) { (void) lock; }
+  static auto unlock(cds::Mutex const* lock) { (void) lock; }
+};
 } // namespace
 
 namespace age {
@@ -131,7 +168,8 @@ auto LoggerImpl<BoolConstant<true>>::_header(std::ostream& out, source_location 
 auto LoggerImpl<BoolConstant<true>>::_footer(std::string const& contents, Level level) -> void {
   for (auto& output : outputs()) {
     if (output.allows(level)) {
-      auto& out = output.output();
+      auto outData = output.outData();
+      auto& out = outData.output();
       addColourHeader(out, level);
       out << contents;
       if (!contents.empty()) {
@@ -277,7 +315,7 @@ auto Logger::get(StringRef name, ostream& out) noexcept -> Logger& {
   auto& logger = get(name);
   auto& outArr = logger.outputs();
 
-  if (outArr.size() == 1u && &outArr[0u].output() == &defaultOutput()) {
+  if (outArr.size() == 1u && &outArr[0u].outData().output() == &defaultOutput()) {
     outArr.clear();
   }
 
@@ -287,4 +325,10 @@ auto Logger::get(StringRef name, ostream& out) noexcept -> Logger& {
 
 auto Logger::setDefaultOutput(ostream& out) noexcept -> void { container().setDefaultOut(out); }
 auto Logger::defaultOutput() noexcept -> ostream& { return container().defaultOut(); }
+
+LoggerOutput::LoggerOutput(std::ostream& out, FilterFlags filterFlags) noexcept :
+    _out(container().reg(out)), _filter(filterFlags & mask) {}
+
+LoggerOutput::LockedOutput::LockedOutput(OutData& out) : _out(out) { LockConfig<>::lock(_out.get<1>()); }
+LoggerOutput::LockedOutput::~LockedOutput() { LockConfig<>::unlock(_out.get<1>()); }
 } // namespace age

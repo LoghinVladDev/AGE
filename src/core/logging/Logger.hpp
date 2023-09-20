@@ -5,7 +5,9 @@
 #pragma once
 
 #include <CDS/Array>
+#include <CDS/Tuple>
 #include <CDS/memory/UniquePointer>
+#include <CDS/threading/Mutex>
 
 #include <source_location>
 
@@ -63,14 +65,12 @@ public:
   using FilterFlags = meta::LogLevelFlags;
   using FilterFlagBits = meta::LogLevelFlagBits;
 
-  explicit(false) LoggerOutput(std::ostream& out, FilterFlags filterFlags = allowAll) noexcept :
-      _pOutput(&out), _filter(filterFlags & mask) {}
+  explicit(false) LoggerOutput(std::ostream& out, FilterFlags filterFlags = allowAll) noexcept;
 
   LoggerOutput(std::ostream& out, FilterFlagBits filterLevel) noexcept :
-      _pOutput(&out), _filter(static_cast<FilterFlags>(filterLevel)) {}
+      LoggerOutput(out, static_cast<FilterFlags>(filterLevel)) {}
 
-  [[nodiscard]] constexpr auto& output() noexcept { return *_pOutput; }
-  [[nodiscard]] constexpr auto const& output() const noexcept { return *_pOutput; }
+  [[nodiscard]] auto outData() noexcept { return LockedOutput(_out); }
 
   [[nodiscard]] constexpr auto allows(meta::LogLevelFlags levels) const noexcept {
     assert((levels == (levels & mask)) && "Level requested outside valid Log Level values");
@@ -82,7 +82,20 @@ public:
   }
 
 private:
-  std::ostream* _pOutput;
+  using OutData = cds::Tuple<std::ostream*, cds::Mutex*>;
+
+  class LockedOutput {
+  public:
+    explicit LockedOutput(OutData& out);
+    ~LockedOutput();
+
+    [[nodiscard]] constexpr auto& output() noexcept { return *_out.get<0>(); }
+
+  private:
+    OutData& _out;
+  };
+
+  OutData _out;
   FilterFlags _filter;
   static constexpr auto const mask = meta::logLevelMask;
 };
@@ -308,7 +321,7 @@ public:
     auto& logger = get(name);
     auto& outArr = logger.outputs();
 
-    if (outArr.size() == 1u && &outArr[0u].output() == &defaultOutput()) {
+    if (outArr.size() == 1u && &outArr[0u].outData().output() == &defaultOutput()) {
       outArr.clear();
     }
 
