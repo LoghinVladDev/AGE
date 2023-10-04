@@ -1,0 +1,22 @@
+
+Registry represents a bunch of properties, that are viewed as one json, but store fragmented, and in groups.
+
+Sub-Json objects can be accessed using the "." in the key
+For example, registry.getJson("t1").getJson("t2") is equivalent to registry.getJson("t1.t2");
+A group property, therefore, represents a json object. "t1" is a group. "t1.t2" is a group
+Only json-objects are defined as group properties.
+
+Registry is by itself Read-Only.
+To write, transactions are used to queue up more write operations in batch.
+Transactions are added to a lock free queue, a separate thread will process stores.
+The store process works as follows to ensure Read-Only status of registry
+Two banks of data -> one active at a time.
+Transactions load data from active read only bank.
+When the transaction size reaches a certain limit, a processor thread is triggered.
+When transactions are processed, the data is applied to the inactive bank.
+When the write is finished, and the data has been written to the disk, the data banks are swapped.
+To ensure read-only in any MT case, lock free, an atomic pointer is used to register the currently active bank.
+
+Transactions works RAII style. Upon destruction, it is queued to the registry.
+
+A transaction can pre-load its info, by giving it a set of group keys. This way, a preload of those groups into the temporary instance of the Transaction can be loaded, for modification and direct in-memory-modification.

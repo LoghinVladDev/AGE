@@ -2,7 +2,7 @@
 // Created by Vlad-Andrei Loghin on 18.06.23.
 //
 
-#include "SettingsRegistry.hpp"
+#include "SettingsRegistryOld.hpp"
 #include <CDS/filesystem/Path>
 #include <CDS/threading/Thread>
 #include <atomic>

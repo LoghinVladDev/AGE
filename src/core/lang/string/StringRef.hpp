@@ -61,6 +61,11 @@ public:
 
   static constexpr cds::Index const npos = cds::String::invalidIndex;
 
+  friend auto operator<<(std::ostream& out, StringRef const& ref) noexcept -> auto& {
+    out.write(ref._buffer, static_cast<std::streamsize>(ref._size));
+    return out;
+  }
+
 private:
   char const* _buffer {nullptr};
   cds::Size _size {0u};

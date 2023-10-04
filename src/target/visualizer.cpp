@@ -3,7 +3,7 @@
 //
 
 #include <QApplication>
-#include <settings/SettingsRegistry.hpp>
+#include <settings/SettingsRegistryOld.hpp>
 #include <window/VisualizerWindow.hpp>
 
 namespace {

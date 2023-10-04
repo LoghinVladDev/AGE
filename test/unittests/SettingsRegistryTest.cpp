@@ -4,7 +4,7 @@
 
 #include <filesystem>
 #include <gtest/gtest.h>
-#include <visualizer/settings/SettingsRegistry.hpp>
+#include <visualizer/settings/SettingsRegistryOld.hpp>
 
 #include <CDS/filesystem/Path>
 

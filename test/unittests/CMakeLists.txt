@@ -49,7 +49,6 @@ if(DEFINED QT_VERSION)
       qtMock/VisualizerWindowTest.cpp
       qtMock/GraphPanelTest.cpp
       qtMock/VertexTest.cpp
-      SettingsRegistryTest.cpp
       LoggerTest.cpp
       FlagEnumTest.cpp
   )

@@ -69,7 +69,7 @@ if(DEFINED QT_VERSION)
 
   set(
      VISUALIZER_CORE_SOURCES
-     ${CMAKE_SOURCE_DIR}/src/visualizer/settings/SettingsRegistry.cpp
+     ${CMAKE_SOURCE_DIR}/src/visualizer/settings/Registry.cpp
   )
 
   set(
